@@ -1,36 +1,76 @@
 import takeAwhile from './callback.mjs';
 
 describe('Callback implementation of an asynchronous function', () => {
-  test('Callback is executed', () => {
-    const callback = jest.fn();
+  test('resolve callback is executed', () => {
+    const resolve = jest.fn();
+    const reject = jest.fn();
 
     jest.useFakeTimers();
-    takeAwhile(null, callback);
-    expect(callback).not.toHaveBeenCalled();
+    takeAwhile(2, resolve, reject);
+    expect(resolve).not.toHaveBeenCalled();
+    expect(reject).not.toHaveBeenCalled();
     jest.runOnlyPendingTimers();
-    expect(callback).toHaveBeenCalledTimes(1);
+    expect(resolve).toHaveBeenCalledTimes(1);
+    expect(reject).not.toHaveBeenCalled();
   });
 
-  test('Callback has access to the input parameter', () => {
-    const callback = jest.fn();
-    const input = { name: 'test' };
+  test('reject callback is executed', () => {
+    const resolve = jest.fn();
+    const reject = jest.fn();
 
     jest.useFakeTimers();
-    takeAwhile(input, callback);
+    takeAwhile(1, resolve, reject);
+    expect(resolve).not.toHaveBeenCalled();
+    expect(reject).not.toHaveBeenCalled();
     jest.runOnlyPendingTimers();
-    expect(callback).toHaveBeenLastCalledWith({ done: true, input });
+    expect(resolve).not.toHaveBeenCalled();
+    expect(reject).toHaveBeenCalledTimes(1);
   });
 
-  test('Callback executes the next task', () => {
-    const callbackNext = jest.fn();
-    const callback = jest.fn(() => takeAwhile(null, callbackNext));
+  test('resolve callback has access to a result', () => {
+    const resolve = jest.fn();
+    const reject = jest.fn();
 
     jest.useFakeTimers();
-    takeAwhile(null, callback);
+    takeAwhile(2, resolve, reject);
     jest.runOnlyPendingTimers();
-    expect(callback).toHaveBeenCalledTimes(1);
-    expect(callbackNext).not.toHaveBeenCalled();
+    expect(resolve).toHaveBeenLastCalledWith({ isEven: true, input: 2 });
+  });
+
+  test('reject callback has access to an error result', () => {
+    const resolve = jest.fn();
+    const reject = jest.fn();
+
+    jest.useFakeTimers();
+    takeAwhile(1, resolve, reject);
     jest.runOnlyPendingTimers();
-    expect(callbackNext).toHaveBeenCalledTimes(1);
+    expect(reject).toHaveBeenLastCalledWith({ isEven: false, input: 1 });
+  });
+
+  test('Multiple resolve and reject callbacks execute in sequence', () => {
+    const reject1 = jest.fn();
+    const reject2 = jest.fn();
+    const reject3 = jest.fn();
+    const resolve3 = jest.fn();
+    const resolve2 = jest.fn((result) => {
+      takeAwhile(result.input + 1, resolve3, reject3);
+    });
+    const resolve1 = jest.fn((result) => {
+      takeAwhile(result.input + 2, resolve2, reject2);
+    });
+
+    jest.useFakeTimers();
+    takeAwhile(2, resolve1, reject1);
+    jest.runOnlyPendingTimers();
+    expect(resolve1).toHaveBeenCalledTimes(1);
+    jest.runOnlyPendingTimers();
+    expect(resolve2).toHaveBeenCalledTimes(1);
+    jest.runAllTimers();
+    expect(resolve1).toHaveBeenCalledTimes(1);
+    expect(resolve2).toHaveBeenCalledTimes(1);
+    expect(resolve3).not.toHaveBeenCalled();
+    expect(reject1).not.toHaveBeenCalled();
+    expect(reject2).not.toHaveBeenCalled();
+    expect(reject3).toHaveBeenCalledTimes(1);
   });
 });

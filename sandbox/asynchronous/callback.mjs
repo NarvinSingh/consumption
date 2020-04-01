@@ -1,7 +1,14 @@
-function takeAwhile(input, callback) {
+function takeAwhile(input, resolve, reject) {
   setTimeout(() => {
-    const res = { done: true, input };
-    callback(res);
+    if (input % 2 === 0) {
+      const result = { isEven: true, input };
+
+      resolve(result);
+    } else {
+      const result = { isEven: false, input };
+
+      reject(result);
+    }
   }, 1000);
 }
 
