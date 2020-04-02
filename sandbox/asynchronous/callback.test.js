@@ -72,5 +72,6 @@ describe('Callback implementation of an asynchronous function', () => {
     expect(reject1).not.toHaveBeenCalled();
     expect(reject2).not.toHaveBeenCalled();
     expect(reject3).toHaveBeenCalledTimes(1);
+    expect(reject3).toHaveBeenCalledWith('The parameter is not even');
   });
 });
