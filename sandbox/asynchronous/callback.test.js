@@ -44,7 +44,7 @@ describe('Callback implementation of an asynchronous function', () => {
     jest.useFakeTimers();
     takeAwhile(1, resolve, reject);
     jest.runOnlyPendingTimers();
-    expect(reject).toHaveBeenLastCalledWith({ isEven: false, input: 1 });
+    expect(reject).toHaveBeenLastCalledWith('The parameter is not even');
   });
 
   test('Multiple resolve and reject callbacks execute in sequence', () => {

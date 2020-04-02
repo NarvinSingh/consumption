@@ -1,13 +1,13 @@
 function takeAwhile(input, resolve, reject) {
   setTimeout(() => {
     if (input % 2 === 0) {
-      const result = { isEven: true, input };
+      const value = { isEven: true, input };
 
-      resolve(result);
+      resolve(value);
     } else {
-      const result = { isEven: false, input };
+      const reason = 'The parameter is not even';
 
-      reject(result);
+      reject(reason);
     }
   }, 1000);
 }
