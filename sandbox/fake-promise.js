@@ -3,6 +3,18 @@ class FakePromise {
     this._ = {
       state: 'pending',
 
+      settleThisAndNextPromise: (handle) => {
+        if (handle) {
+          queueMicrotask(() => {
+            try {
+              this._.nextPromise._.resolve(handle(this._.value));
+            } catch (err) {
+              this._.nextPromise._.reject(err);
+            }
+          });
+        }
+      },
+
       resolve: (value) => {
         if (this._.state === 'pending') {
           this._.state = 'fulfilled';
@@ -10,15 +22,7 @@ class FakePromise {
 
           // Promise was fulfilled after then was called so fulfill promise returned by then with
           // this promise's handleFulfilled callback return value
-          if (this._.handleFulfilled) {
-            queueMicrotask(() => {
-              try {
-                this._.nextPromise._.resolve(this._.handleFulfilled(this._.value));
-              } catch (err) {
-                this._.nextPromise._.reject(err);
-              }
-            });
-          }
+          this._.settleThisAndNextPromise(this._.handleFulfilled);
         }
       },
 
@@ -29,15 +33,7 @@ class FakePromise {
 
           // Promise was rejected after then was called so fulfill promise returned by then with
           // this promise's handleRejected callback return value
-          if (this._.handleRejected) {
-            queueMicrotask(() => {
-              try {
-                this._.nextPromise._.resolve(this._.handleRejected(this._.value));
-              } catch (err) {
-                this._.nextPromise._.reject(err);
-              }
-            });
-          }
+          this._.settleThisAndNextPromise(this._.handleRejected);
         }
       },
     };
@@ -50,37 +46,23 @@ class FakePromise {
   then(handleFulfilled, handleRejected) {
     this._.handleFulfilled = handleFulfilled;
     this._.handleRejected = handleRejected;
-
-    if (this._.state === 'pending') {
-      this._.nextPromise = new FakePromise(() => {
-        // The executor doesn't do anthing so this next promise will remain pending indefinitely
-        // When this promise is fulfilled, it will manually fulfill the next promise
-      });
-
-      return this._.nextPromise;
-    }
+    this._.nextPromise = new FakePromise(() => {
+      // The executor doesn't do anthing so this next promise will remain pending indefinitely
+      // When this promise is settled, it will manually settle the next promise
+    });
 
     // Promise was fulfilled before then was called so fulfill promise returned by then with this
     // promise's handleFulfilled callback return value
     if (this._.state === 'fulfilled') {
-      queueMicrotask(() => {
-        try {
-          return new FakePromise((resolve) => resolve(this._.handleFulfilled(this._.value)));
-        } catch (err) {
-          return new FakePromise((resolve, reject) => reject(err));
-        }
-      });
-    }
+      this._.settleThisAndNextPromise(this._.handleFulfilled);
 
     // Promise was rejected before then was called so fulfill promise returned by then with this
     // promise's handleRejected callback return value
-    queueMicrotask(() => {
-      try {
-        return new FakePromise((resolve) => resolve(this._.handleRejected(this._.value)));
-      } catch (err) {
-        return new FakePromise((resolve, reject) => reject(err));
-      }
-    });
+    } else if (this._.state === 'rejected') {
+      this._.settleThisAndNextPromise(this._.handleRejected);
+    }
+
+    return this._.nextPromise;
   }
 
   catch(reject) {
