@@ -70,67 +70,87 @@ class FakePromise {
   }
 }
 
+const messages = [];
+
 const realPromise1 = new Promise((resolve) => {
   setTimeout(() => {
-    console.log('realPromise1 setTimeout callback ran a');
-    resolve('Success!');
-    resolve('Success again!');
-    console.log('realPromise1 setTimeout callback ran b');
+    messages.push('realPromise1 setTimeout callback ran a');
+    resolve('realPromise1 resolve ran by executor');
+    resolve('realPromise1 resolve not ran by executor a second time (message not pushed)');
+    messages.push('realPromise1 setTimeout callback ran b');
   }, 0);
 });
 
-realPromise1.then((successMessage) => {
-  console.log(`realPromise1 Yay! ${successMessage}`);
+realPromise1.then((value) => {
+  messages.push(value);
 });
 
 const realPromise2 = new Promise((resolve) => {
   setTimeout(() => {
-    console.log('realPromise2 setTimeout callback ran a');
-    resolve('Success!');
-    resolve('Success again!');
-    console.log('realPromise2 setTimeout callback ran b');
+    messages.push('realPromise2 setTimeout callback ran a');
+    resolve('realPromise2 resolve ran by executor');
+    resolve('realPromise2 resolve not ran by executor a second time (message not pushed)');
+    messages.push('realPromise2 setTimeout callback ran b');
   }, 0);
 });
 
-realPromise2.then((successMessage) => {
-  console.log(`realPromise2 Yay! ${successMessage}`);
-});
+setImmediate(() => realPromise2.then((value) => {
+  messages.push(value);
+}));
 
 const fakePromise1 = new FakePromise((resolve) => {
   setTimeout(() => {
-    console.log('fakePromise1 setTimeout callback ran a');
-    resolve('Success!');
-    resolve('Success again!');
-    console.log('fakePromise1 setTimeout callback ran b');
+    messages.push('fakePromise1 setTimeout callback ran a');
+    resolve('fakePromise1 resolve ran by executor');
+    resolve('fakePromise1 resolve not ran by executor a second time (message not pushed)');
+    messages.push('fakePromise1 setTimeout callback ran b');
   }, 0);
 });
 
-fakePromise1.then((successMessage) => {
-  console.log(`fakePromise1 Yay! ${successMessage}`);
+fakePromise1.then((value) => {
+  messages.push(value);
 });
 
 const fakePromise2 = new FakePromise((resolve) => {
   setTimeout(() => {
-    console.log('fakePromise2 setTimeout callback ran a');
-    resolve('Success!');
-    resolve('Success again!');
-    console.log('fakePromise2 setTimeout callback ran b');
+    messages.push('fakePromise2 setTimeout callback ran a');
+    resolve('fakePromise2 resolve ran by executor');
+    resolve('fakePromise2 resolve not ran by executor a second time (message not pushed)');
+    messages.push('fakePromise2 setTimeout callback ran b');
   }, 0);
 });
 
-setImmediate(() => fakePromise2.then((successMessage) => {
-  console.log(`fakePromise2 Yay! ${successMessage}`);
+setImmediate(() => fakePromise2.then((value) => {
+  messages.push(value);
 }));
 
-// const promise = new Promise((resolve) => {
-//   console.time('for loop duration');
-//   console.log('for loop started');
-//   for (let i = 0; i < 1000000000; i += 1);
-//   console.log('for loop ended');
-//   console.timeEnd('for loop duration');
-//   resolve();
-// });
+setImmediate(() => console.log(messages));
 
-// console.log('promise created');
+console.time('real/fakePromise3 duration');
 
-// promise.then(() => console.log('promise resolved'));
+const realPromise3 = new Promise((resolve) => {
+  console.time('realPromise3 for loop duration');
+  console.log('realPromise3 for loop started');
+  for (let i = 0; i < 1000000000; i += 1);
+  console.log('realPromise3 for loop ended');
+  console.timeEnd('realPromise3 for loop duration');
+  resolve();
+});
+
+console.log('realPromise3 promise created');
+
+realPromise3.then(() => console.log('realPromise3 promise resolved'));
+
+const fakePromise3 = new FakePromise((resolve) => {
+  console.time('fakePromise3 for loop duration');
+  console.log('fakePromise3 for loop started');
+  for (let i = 0; i < 1000000000; i += 1);
+  console.log('fakePromise3 for loop ended');
+  console.timeEnd('fakePromise3 for loop duration');
+  resolve();
+});
+
+console.log('fakePromise3 promise created');
+
+fakePromise3.then(() => console.log('fakePromise3 promise resolved'));
+console.timeEnd('real/fakePromise3 duration');
