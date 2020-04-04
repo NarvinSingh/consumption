@@ -294,7 +294,7 @@ describe('Fake promise tests', () => {
     });
   });
 
-  test('Chained promise resolves to value from prev handler (sync executor)', (done) => {
+  test('Chained promise resolves to prev handler value (sync executor)', (done) => {
     const promise = new FakePromise((resolve) => {
       resolve('done');
     });
@@ -308,7 +308,7 @@ describe('Fake promise tests', () => {
       });
   });
 
-  test('Chained promise resolves to value from prev handler (async executor)', (done) => {
+  test('Chained promise resolves to prev handler value (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
       setImmediate(() => {
         resolve('done');
@@ -324,7 +324,7 @@ describe('Fake promise tests', () => {
       });
   });
 
-  test('Chained promise resolves to value from prev handler (microtask executor)', (done) => {
+  test('Chained promise resolves to prev handler value (microtask executor)', (done) => {
     const promise = new FakePromise((resolve) => {
       queueMicrotask(() => {
         resolve('done');
@@ -338,6 +338,63 @@ describe('Fake promise tests', () => {
         expect(value).toBe('value 2 is value 1 is done');
         done();
       });
+  });
+
+  test('Chained promise resolves to prev handler promise value (sync executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      resolve('done1');
+    });
+
+    promise.then((value) => new FakePromise((resolve) => {
+      resolve(`${value} done2`);
+    })).then((value) => new FakePromise((resolve) => {
+      resolve(`${value} done3`);
+    })).then((value) => {
+      expect(value).toBe('done1 done2 done3');
+      done();
+    });
+  });
+
+  test('Chained promise resolves to prev handler promise value (async executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done1');
+      });
+    });
+
+    promise.then((value) => new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve(`${value} done2`);
+      });
+    })).then((value) => new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve(`${value} done3`);
+      });
+    })).then((value) => {
+      expect(value).toBe('done1 done2 done3');
+      done();
+    });
+  });
+
+  test('Chained promise resolves to prev handler promise value (microtask executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done1');
+      });
+    });
+
+    promise.then((value) => new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve(`${value} done2`);
+      });
+    })).then((value) => new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve(`${value} done3`);
+      });
+    })).then((value) => {
+      expect(value).toBe('done1 done2 done3');
+      done();
+    });
   });
 
   test('Handler returns pending promise that will be resolved (async executors)', (done) => {
