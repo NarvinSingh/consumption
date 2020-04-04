@@ -340,7 +340,83 @@ describe('Fake promise tests', () => {
       });
   });
 
-  test.skip('Handler returns unresolved promise', (done) => {
+  test('Handler returns pending promise that will be resolved (async executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done');
+      });
+    });
+
+    promise
+      .then((value) => new FakePromise((resolve) => {
+        setImmediate(() => {
+          resolve(`value1 is ${value}`);
+        });
+      }))
+      .then((value) => {
+        expect(value).toBe('value1 is done');
+        done();
+      });
+  });
+
+  test('Handler returns pending promise that will be resolved (microtask executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done');
+      });
+    });
+
+    promise
+      .then((value) => new FakePromise((resolve) => {
+        queueMicrotask(() => {
+          resolve(`value1 is ${value}`);
+        });
+      }))
+      .then((value) => {
+        expect(value).toBe('value1 is done');
+        done();
+      });
+  });
+
+  test('Handler returns pending promise that will be rejected (async executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done');
+      });
+    });
+
+    promise
+      .then((value) => new FakePromise((resolve, reject) => {
+        setImmediate(() => {
+          reject(`value1 is ${value}`);
+        });
+      }))
+      .catch((value) => {
+        expect(value).toBe('value1 is done');
+        done();
+      });
+  });
+
+  test('Handler returns pending promise that will be rejected (microtask executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done');
+      });
+    });
+
+    promise
+      .then((value) => new FakePromise((resolve, reject) => {
+        queueMicrotask(() => {
+          reject(`value1 is ${value}`);
+        });
+      }))
+      .catch((value) => {
+        expect(value).toBe('value1 is done');
+        done();
+      });
+  });
+
+  test('Handler returns resolved promise (sync executors)', (done) => {
     const promise = new FakePromise((resolve) => {
       resolve('done');
     });
@@ -350,6 +426,21 @@ describe('Fake promise tests', () => {
         resolve(`value1 is ${value}`);
       }))
       .then((value) => {
+        expect(value).toBe('value1 is done');
+        done();
+      });
+  });
+
+  test('Handler returns rejected promise (sync executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      resolve('done');
+    });
+
+    promise
+      .then((value) => new FakePromise((resolve, reject) => {
+        reject(`value1 is ${value}`);
+      }))
+      .catch((value) => {
         expect(value).toBe('value1 is done');
         done();
       });
