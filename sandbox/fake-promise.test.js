@@ -611,4 +611,41 @@ describe('Fake promise tests', () => {
       done();
     });
   });
+
+  test('Resolved promise propagates value if no handler defined (sync executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      resolve('done');
+    });
+
+    promise.then().then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
+
+  test('Resolved promise propagates value if no handler defined (async executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done');
+      });
+    });
+
+    promise.then().then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
+
+  test('Resolved promise propagates value if no handler defined (microtask executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done');
+      });
+    });
+
+    promise.then().then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
 });
