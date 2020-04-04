@@ -501,17 +501,14 @@ describe('Fake promise tests', () => {
     });
 
     expect.assertions(1);
-    promise
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .catch((reason) => {
-        expect(reason).toBe('error');
-        done();
-      });
+    promise.then((value) => {
+      expect(value).toBeUndefined();
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
   });
 
   test('Rejected promise jumps to catch (async executor)', (done) => {
@@ -522,17 +519,14 @@ describe('Fake promise tests', () => {
     });
 
     expect.assertions(1);
-    promise
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .catch((reason) => {
-        expect(reason).toBe('error');
-        done();
-      });
+    promise.then((value) => {
+      expect(value).toBeUndefined();
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
   });
 
   test('Rejected promise jumps to catch (microtask executor)', (done) => {
@@ -543,16 +537,78 @@ describe('Fake promise tests', () => {
     });
 
     expect.assertions(1);
-    promise
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .then((value) => {
-        expect(value).toBeUndefined();
-      })
-      .catch((reason) => {
-        expect(reason).toBe('error');
-        done();
+    promise.then((value) => {
+      expect(value).toBeUndefined();
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
+  });
+
+  test('Rejected promise in middle of chain jumps to catch (sync executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      resolve('done');
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+      return new FakePromise((resolve, reject) => {
+        reject('error');
       });
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
+  });
+
+  test('Rejected promise in middle of chain jumps to catch (async executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done');
+      });
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+      return new FakePromise((resolve, reject) => {
+        setImmediate(() => {
+          reject('error');
+        });
+      });
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
+  });
+
+  test('Rejected promise in middle of chain jumps to catch (microtask executors)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done');
+      });
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+      return new FakePromise((resolve, reject) => {
+        queueMicrotask(() => {
+          reject('error');
+        });
+      });
+    }).then((value) => {
+      expect(value).toBeUndefined();
+    }).catch((reason) => {
+      expect(reason).toBe('error');
+      done();
+    });
   });
 });
