@@ -5,6 +5,9 @@ export default class FakePromise {
     this._ = {
       id: nextId,
       state: 'pending',
+      fulfilledHandlers: [],
+      rejectedHandlers: [],
+      nextPromises: [],
 
       trySettleThisAndNextPromise: () => {
         // The promise is fulfilled or rejected and has a value, so settle it by calling the handler
@@ -14,35 +17,41 @@ export default class FakePromise {
         //     when then is called
         //  2) then was called before the promise was resolved or rejected, so it will be settled
         //     when it is resolved or rejected
-        const handle = this._[this._.handlerName];
-        if (handle) {
+        if (this._.activeHandlers) {
           // console.log('Will settle async', this._);
-          queueMicrotask(() => {
-            try {
-              const result = handle(this._.value);
+          while (this._.activeHandlers.length) {
+            const handle = this._.activeHandlers.shift();
+            const nextPromise = this._.nextPromises.shift();
 
-              // If the handler returns a promise, resolve or reject the next promise with the value
-              // of the returned promise instead of the returned promise itself
-              if (result instanceof FakePromise) {
-                // If the returned promise is still pending, link the next promise to it so that the
-                // next promise can get the returned promise's state and value once the returned
-                // promise is resolved or rejected
-                if (result._.state === 'pending') {
-                  result._.linkedPromise = this._.nextPromise;
-                } else if (result._.state === 'fulfilled') {
-                  this._.nextPromise._.resolve(result._.value);
-                } else {
-                  this._.nextPromise._.reject(result._.value);
+            if (handle) {
+              queueMicrotask(() => {
+                try {
+                  const result = handle(this._.value);
+
+                  // If the handler returns a promise, resolve or reject the next promise with the
+                  // value of the returned promise instead of the returned promise itself
+                  if (result instanceof FakePromise) {
+                    // If the returned promise is still pending, link the next promise to it so that
+                    // the next promise can get the returned promise's state and value once the
+                    // returned promise is resolved or rejected
+                    if (result._.state === 'pending') {
+                      result._.linkedPromise = nextPromise;
+                    } else if (result._.state === 'fulfilled') {
+                      nextPromise._.resolve(result._.value);
+                    } else {
+                      nextPromise._.reject(result._.value);
+                    }
+                  } else {
+                    nextPromise._.resolve(result);
+                  }
+                  // console.log(`called ${this._.handlerName} and resolved nextPromise`, this._);
+                } catch (err) {
+                  nextPromise._.reject(err);
+                  // console.log(`${this._.handlerName} threw and rejected nextPromise`, this._);
                 }
-              } else {
-                this._.nextPromise._.resolve(result);
-              }
-              // console.log(`called ${this._.handlerName} and resolved nextPromise`, this._);
-            } catch (err) {
-              this._.nextPromise._.reject(err);
-              // console.log(`${this._.handlerName} threw and rejected nextPromise`, this._);
+              });
             }
-          });
+          }
         } else {
           // console.log('Will not settle', this._);
         }
@@ -51,12 +60,13 @@ export default class FakePromise {
       resolve: (value) => {
         if (this._.state === 'pending') {
           this._.state = 'fulfilled';
-          this._.handlerName = 'handleFulfilled';
+          this._.activeHandlers = this._.fulfilledHandlers;
           this._.value = value;
           // console.log('resolve will try to settle', this._);
           this._.trySettleThisAndNextPromise();
 
-          // The handler for this promise returned a linked promise, so resolve it as well
+          // This promise was returned from a then handler so resolve the promise it is linked to as
+          // well with this promise's value
           if (this._.linkedPromise) {
             this._.linkedPromise._.resolve(value);
           }
@@ -66,12 +76,13 @@ export default class FakePromise {
       reject: (reason) => {
         if (this._.state === 'pending') {
           this._.state = 'rejected';
-          this._.handlerName = 'handleRejected';
+          this._.activeHandlers = this._.rejectedHandlers;
           this._.value = reason;
           // console.log('reject will try to settle', this._);
           this._.trySettleThisAndNextPromise();
 
-          // The handler for this promise returned a linked promise, so resolve it as well
+          // This promise was returned from a then handler so reject the promise it is linked to as
+          // well with this promise's value
           if (this._.linkedPromise) {
             this._.linkedPromise._.reject(reason);
           }
@@ -83,20 +94,20 @@ export default class FakePromise {
     executor(this._.resolve, this._.reject);
   }
 
-  // Does not implement calling then more than once on the same promise. Only a handler from the
-  // last then call before the promise is fulfilled or rejected will be called.
   then(handleFulfilled, handleRejected) {
-    this._.handleFulfilled = handleFulfilled;
-    this._.handleRejected = handleRejected;
-    this._.nextPromise = new FakePromise(() => {
+    const nextPromise = new FakePromise(() => {
       // The executor doesn't do anthing so this next promise will remain pending indefinitely
       // When this promise is settled, it will manually settle the next promise
     });
+
+    this._.nextPromises.push(nextPromise);
+    this._.fulfilledHandlers.push(handleFulfilled);
+    this._.rejectedHandlers.push(handleRejected);
     // console.log('then will try to settle', this._);
     this._.trySettleThisAndNextPromise();
 
     // console.log('then will return nextPromise', this._);
-    return this._.nextPromise;
+    return nextPromise;
   }
 
   catch(handleRejected) {

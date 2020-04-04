@@ -445,4 +445,53 @@ describe('Fake promise tests', () => {
         done();
       });
   });
+
+  test('Resolve promise with then called multiple times (sync executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      resolve('done');
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+    });
+    promise.then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
+
+  test('Resolve promise with then called multiple times (async executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      setImmediate(() => {
+        resolve('done');
+      });
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+    });
+    promise.then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
+
+  test('Resolve promise with then called multiple times (async executor)', (done) => {
+    const promise = new FakePromise((resolve) => {
+      queueMicrotask(() => {
+        resolve('done');
+      });
+    });
+
+    expect.assertions(2);
+    promise.then((value) => {
+      expect(value).toBe('done');
+    });
+    promise.then((value) => {
+      expect(value).toBe('done');
+      done();
+    });
+  });
 });
