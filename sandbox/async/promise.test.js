@@ -1,7 +1,7 @@
 import takeAwhile from './promise.mjs';
 
 describe('Promise implementation of an asynchronous function', () => {
-  test.only('Fulfilled handler is executed', (done) => {
+  test('Fulfilled handler is executed', (done) => {
     expect.assertions(4);
 
     const handleFulfilled = jest.fn();
@@ -18,7 +18,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Rejected handler is executed', (done) => {
+  test('Rejected handler is executed', (done) => {
     expect.assertions(4);
 
     const handleFulfilled = jest.fn();
@@ -34,7 +34,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Fulfilled handler has access to a result', (done) => {
+  test('Fulfilled handler has access to a result', (done) => {
     expect.assertions(1);
 
     const handleFulfilled = jest.fn();
@@ -45,7 +45,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Rejected handler has access to an error result', (done) => {
+  test('Rejected handler has access to an error result', (done) => {
     expect.assertions(1);
 
     const handleRejected = jest.fn();
@@ -56,7 +56,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Fulfilled handler passes along a result', (done) => {
+  test('Fulfilled handler passes along a result', (done) => {
     expect.assertions(3);
 
     const handleFulfilled = jest.fn();
@@ -72,7 +72,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Rejected handler passes along a result', (done) => {
+  test('Rejected handler passes along a result', (done) => {
     expect.assertions(3);
 
     const handleRejected = jest.fn();
@@ -88,7 +88,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Fulfilled handler passes along a promise result', (done) => {
+  test('Fulfilled handler passes along a promise result', (done) => {
     expect.assertions(7);
 
     const handleFulfilled = jest.fn();
@@ -112,7 +112,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Rejected handler passes along a promise result', (done) => {
+  test('Rejected handler passes along a promise result', (done) => {
     expect.assertions(7);
 
     const handleRejected = jest.fn();
@@ -136,7 +136,7 @@ describe('Promise implementation of an asynchronous function', () => {
     });
   });
 
-  test.only('Multiple fulfilled and rejected handlers execute in sequence', (done) => {
+  test('Multiple fulfilled and rejected handlers execute in sequence', (done) => {
     expect.assertions(5);
 
     const handleFulfilled1 = jest.fn();
