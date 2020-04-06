@@ -4,9 +4,9 @@ function takeAwhile(input) {
       if (input % 2 === 0) {
         resolve({ isEven: true, input });
       } else {
-        reject(new Error('The parameter is not even'));
+        reject(new Error(`The parameter is not even: ${input}`));
       }
-    }, 1000);
+    }, 0);
   });
 }
 
