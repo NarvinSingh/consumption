@@ -5,7 +5,7 @@ function takeAwhile(input, handleFulfilled, handleRejected) {
     } else {
       handleRejected(new Error('The parameter is not even'));
     }
-  }, 1000);
+  }, 0);
 }
 
 export default takeAwhile;
