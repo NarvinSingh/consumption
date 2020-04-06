@@ -14,7 +14,7 @@ describe('Fake promise tests', () => {
 
   test('Resolve promise with executor that runs asynchronous task code', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => resolve('done'));
+      setTimeout(() => resolve('done'), 0);
     });
 
     promise.then((value) => {
@@ -54,10 +54,10 @@ describe('Fake promise tests', () => {
     const events = [];
 
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         events.push('promise executor running');
         resolve('done');
-      });
+      }, 0);
     });
 
     events.push('promise created');
@@ -108,11 +108,11 @@ describe('Fake promise tests', () => {
     const events = [];
 
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         events.push('promise executor running');
         resolve('done 1');
         resolve('done 2');
-      });
+      }, 0);
     });
 
     events.push('promise created');
@@ -157,9 +157,9 @@ describe('Fake promise tests', () => {
 
   test('Reject promise (async executor)', (done) => {
     const promise = new FakePromise((resolve, reject) => {
-      setImmediate(() => {
+      setTimeout(() => {
         reject('error');
-      });
+      }, 0);
     });
 
     promise.catch((reason) => {
@@ -228,9 +228,9 @@ describe('Fake promise tests', () => {
 
   test('Catch rejected promise with error thrown by handler (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     promise.then(() => {
@@ -268,9 +268,9 @@ describe('Fake promise tests', () => {
 
   test('Returned promise resolves to value from handler (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
     const returnedPromise = promise.then((value) => `value is ${value}`);
 
@@ -310,9 +310,9 @@ describe('Fake promise tests', () => {
 
   test('Chained promise resolves to prev handler value (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     promise
@@ -357,19 +357,19 @@ describe('Fake promise tests', () => {
 
   test('Chained promise resolves to prev handler promise value (async executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done1');
-      });
+      }, 0);
     });
 
     promise.then((value) => new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve(`${value} done2`);
-      });
+      }, 0);
     })).then((value) => new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve(`${value} done3`);
-      });
+      }, 0);
     })).then((value) => {
       expect(value).toBe('done1 done2 done3');
       done();
@@ -399,16 +399,16 @@ describe('Fake promise tests', () => {
 
   test('Handler returns pending promise that will be resolved (async executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     promise
       .then((value) => new FakePromise((resolve) => {
-        setImmediate(() => {
+        setTimeout(() => {
           resolve(`value1 is ${value}`);
-        });
+        }, 0);
       }))
       .then((value) => {
         expect(value).toBe('value1 is done');
@@ -437,16 +437,16 @@ describe('Fake promise tests', () => {
 
   test('Handler returns pending promise that will be rejected (async executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     promise
       .then((value) => new FakePromise((resolve, reject) => {
-        setImmediate(() => {
+        setTimeout(() => {
           reject(`value1 is ${value}`);
-        });
+        }, 0);
       }))
       .catch((value) => {
         expect(value).toBe('value1 is done');
@@ -520,9 +520,9 @@ describe('Fake promise tests', () => {
 
   test('Resolve promise with then called multiple times (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     expect.assertions(2);
@@ -570,9 +570,9 @@ describe('Fake promise tests', () => {
 
   test('Rejected promise jumps to catch (async executor)', (done) => {
     const promise = new FakePromise((resolve, reject) => {
-      setImmediate(() => {
+      setTimeout(() => {
         reject('error');
-      });
+      }, 0);
     });
 
     expect.assertions(1);
@@ -625,18 +625,18 @@ describe('Fake promise tests', () => {
 
   test('Rejected promise in middle of chain jumps to catch (async executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     expect.assertions(2);
     promise.then((value) => {
       expect(value).toBe('done');
       return new FakePromise((resolve, reject) => {
-        setImmediate(() => {
+        setTimeout(() => {
           reject('error');
-        });
+        }, 0);
       });
     }).then((value) => {
       expect(value).toBeUndefined();
@@ -682,9 +682,9 @@ describe('Fake promise tests', () => {
 
   test('Resolved promise propagates value if no handler defined (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      setImmediate(() => {
+      setTimeout(() => {
         resolve('done');
-      });
+      }, 0);
     });
 
     promise.then().then((value) => {
