@@ -3,7 +3,7 @@ function takeAwhile(input, handleFulfilled, handleRejected) {
     if (input % 2 === 0) {
       handleFulfilled({ isEven: true, input });
     } else {
-      handleRejected(new Error('The parameter is not even'));
+      handleRejected(new Error(`The parameter is not even: ${input}`));
     }
   }, 0);
 }
