@@ -1,6 +1,16 @@
 import takeAwhile from './promise.mjs';
 
 describe('Promise implementation of an asynchronous function', () => {
+  test('Promise resolves', () => {
+    expect.assertions(1);
+    return expect(takeAwhile(2)).resolves.toStrictEqual({ isEven: true, input: 2 });
+  });
+
+  test('Promise rejects', () => {
+    expect.assertions(1);
+    return expect(takeAwhile(1)).rejects.toStrictEqual(new Error('The parameter is not even: 1'));
+  });
+
   test('Fulfilled handler is executed', (done) => {
     expect.assertions(4);
 
@@ -122,7 +132,7 @@ describe('Promise implementation of an asynchronous function', () => {
     expect(handleRejected).not.toHaveBeenCalled();
     expect(handleFulfilled2).not.toHaveBeenCalled();
     handleRejected.mockImplementation((reason) => {
-      const promise = takeAwhile(parseInt(reason.message.split(': ').pop(), 10) + 1, handleFulfilled2);
+      const promise = takeAwhile(parseInt(reason.message.split(': ').pop(), 10) + 1);
       expect(handleRejected).toHaveBeenCalledTimes(1);
       expect(handleFulfilled2).not.toHaveBeenCalled();
 
