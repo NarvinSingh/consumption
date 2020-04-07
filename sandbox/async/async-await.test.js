@@ -1,6 +1,164 @@
 import takeAwhile from './promise.mjs';
 
 describe('Promise implementation of an asynchronous function', () => {
+  test('Promise executor sync code runs immediately', () => {
+    expect.assertions(2);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      events.push(1);
+      resolve('done');
+    });
+
+    events.push(2);
+    expect(promise).toBeDefined();
+    expect(events).toStrictEqual([1, 2]);
+  });
+
+  test('Promise executor async code runs after stack code', (done) => {
+    expect.assertions(2);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+        expect(events).toStrictEqual([2, 1]);
+        done();
+      }, 0);
+    });
+
+    events.push(2);
+    expect(promise).toBeDefined();
+  });
+
+  test('Awaited promise executor async code runs immediately', async () => {
+    expect.assertions(1);
+
+    const events = [];
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+      }, 0);
+    });
+
+    events.push(2);
+    expect(events).toStrictEqual([1, 2]);
+  });
+
+  test('Promise then handler runs after stack code', (done) => {
+    expect.assertions(1);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      events.push(1);
+      resolve('done');
+    });
+
+    promise.then(() => {
+      events.push(2);
+      expect(events).toStrictEqual([1, 3, 2]);
+      done();
+    });
+    events.push(3);
+  });
+
+  test('Awaited then handler runs immediately', async () => {
+    expect.assertions(1);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      events.push(1);
+      resolve('done');
+    });
+
+    await promise.then(() => {
+      events.push(2);
+    });
+    events.push(3);
+    expect(events).toStrictEqual([1, 2, 3]);
+  });
+
+  test('Promise executor async code and then handler run after stack code', (done) => {
+    expect.assertions(1);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+      });
+    });
+
+    promise.then(() => {
+      events.push(2);
+      expect(events).toStrictEqual([3, 1, 2]);
+      done();
+    });
+    events.push(3);
+  });
+
+  test('Awaited then handler and prior executor async code run immediately', async () => {
+    expect.assertions(1);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+      });
+    });
+
+    await promise.then(() => {
+      events.push(2);
+    });
+    events.push(3);
+    expect(events).toStrictEqual([1, 2, 3]);
+  });
+
+  test('Awaited then handler does not wait for async code not returned as a promise', async () => {
+    expect.assertions(2);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+      });
+    });
+
+    await promise.then((value) => {
+      expect(value).toBe('done');
+      setTimeout(() => {
+        events.push(2);
+      }, 0);
+    });
+    events.push(3);
+    expect(events).toStrictEqual([1, 3]);
+  });
+
+  test('Awaited then handler waits for async code returned as a promise', async () => {
+    expect.assertions(1);
+
+    const events = [];
+    const promise = new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(1);
+        resolve('done');
+      });
+    });
+
+    await promise.then(() => new Promise((resolve) => {
+      setTimeout(() => {
+        events.push(2);
+        resolve('then done');
+      }, 0);
+    }));
+    events.push(3);
+    expect(events).toStrictEqual([1, 2, 3]);
+  });
+
   test('Not awaiting an async function returns a promise', () => {
     expect.assertions(1);
     expect(takeAwhile(2)).toBeInstanceOf(Promise);
