@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "consumption",
   "version": "1.0.0",
   "description": "Shopping list",
@@ -23,5 +24,8 @@
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.2",
     "jest": "^25.2.4"
+  },
+  "dependencies": {
+    "mongodb": "^3.5.5"
   }
 }
