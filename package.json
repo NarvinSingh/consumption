@@ -26,6 +26,7 @@
     "jest": "^25.2.4"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
     "mongodb": "^3.5.5"
   }
 }
