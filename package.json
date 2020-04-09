@@ -1,10 +1,11 @@
 {
-  "type": "module",
   "name": "consumption",
   "version": "1.0.0",
   "description": "Shopping list",
-  "main": "index.js",
+  "type": "module",
+  "main": "app.js",
   "scripts": {
+    "startDev": "nodemon app.js",
     "test": "jest"
   },
   "repository": {
@@ -23,10 +24,13 @@
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-import": "^2.20.2",
-    "jest": "^25.2.4"
+    "jest": "^25.2.4",
+    "nodemon": "^2.0.3"
   },
   "dependencies": {
+    "bcrypt": "^4.0.1",
     "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "mongodb": "^3.5.5"
   }
 }
