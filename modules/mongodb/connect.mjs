@@ -9,7 +9,9 @@ export default async function connect(
 ) {
   const { MongoClient } = mongodb;
   const fixedDbName = dbName === undefined || dbName === null ? '' : dbName;
-  const url = `mongodb+srv://${username}:${password}@${host}/${fixedDbName}?retryWrites=true&w=majority`;
+  const protocol = 'mongodb+srv';
+  const queryParams = 'retryWrites=true&w=majority';
+  const url = `${protocol}://${username}:${password}@${host}/${fixedDbName}?${queryParams}`;
   const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 
   return client.connect();
