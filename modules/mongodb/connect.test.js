@@ -1,25 +1,21 @@
 import 'dotenv/config.js';
-import { MongoClient, MongoParseError, MongoServerSelectionError } from 'mongodb';
+import mongodb from 'mongodb';
 import connect from './connect.mjs';
 
-describe('MongoDB connection tests', () => {
-  beforeAll(() => {
-    jest.setTimeout(60000);
-  });
+const { MongoParseError, MongoServerSelectionError } = mongodb;
 
+describe('MongoDB connection tests', () => {
   test('Connects with default parameters', async () => {
-    expect.assertions(3);
+    expect.assertions(2);
 
     const client = await connect();
 
-    expect(client).toBeInstanceOf(MongoClient);
-    expect(client.isConnected()).toBe(true);
-    await client.close();
-    expect(client.isConnected()).toBe(false);
+    expect(client.url).toBe(`mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_DB}?retryWrites=true&w=majority`);
+    expect(client.options).toStrictEqual({ useNewUrlParser: true, useUnifiedTopology: true });
   });
 
   test('Connects with non-default parameters', async () => {
-    expect.assertions(3);
+    expect.assertions(2);
 
     const client = await connect(
       process.env.MONGODB_TEST_HOST,
@@ -28,26 +24,22 @@ describe('MongoDB connection tests', () => {
       process.env.MONGODB_TEST_PASSWORD,
     );
 
-    expect(client).toBeInstanceOf(MongoClient);
-    expect(client.isConnected()).toBe(true);
-    await client.close();
-    expect(client.isConnected()).toBe(false);
+    expect(client.url).toBe(`mongodb+srv://${process.env.MONGODB_TEST_USERNAME}:${process.env.MONGODB_TEST_PASSWORD}@${process.env.MONGODB_TEST_HOST}/${process.env.MONGODB_TEST_DB}?retryWrites=true&w=majority`);
+    expect(client.options).toStrictEqual({ useNewUrlParser: true, useUnifiedTopology: true });
   });
 
   test('Connects when no db is specified', async () => {
-    expect.assertions(3);
+    expect.assertions(2);
 
     const client = await connect(
       process.env.MONGODB_TEST_HOST,
-      '',
+      null,
       process.env.MONGODB_TEST_USERNAME,
       process.env.MONGODB_TEST_PASSWORD,
     );
 
-    expect(client).toBeInstanceOf(MongoClient);
-    expect(client.isConnected()).toBe(true);
-    await client.close();
-    expect(client.isConnected()).toBe(false);
+    expect(client.url).toBe(`mongodb+srv://${process.env.MONGODB_TEST_USERNAME}:${process.env.MONGODB_TEST_PASSWORD}@${process.env.MONGODB_TEST_HOST}/?retryWrites=true&w=majority`);
+    expect(client.options).toStrictEqual({ useNewUrlParser: true, useUnifiedTopology: true });
   });
 
   test('Throws when host is invalid', async () => {

@@ -9,8 +9,8 @@ export default async function connect(
 ) {
   const { MongoClient } = mongodb;
   const fixedDbName = dbName === undefined || dbName === null ? '' : dbName;
-  const uri = `mongodb+srv://${username}:${password}@${host}/${fixedDbName}?retryWrites=true&w=majority`;
-  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  const url = `mongodb+srv://${username}:${password}@${host}/${fixedDbName}?retryWrites=true&w=majority`;
+  const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 
   return client.connect();
 }
