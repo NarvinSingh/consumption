@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Shopping list",
   "type": "module",
-  "main": "app.js",
+  "main": "./api/app.js",
   "scripts": {
-    "startDev": "nodemon app.js",
+    "start": "nodemon ./api/app.js",
     "test": "jest"
   },
   "repository": {
