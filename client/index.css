@@ -104,7 +104,13 @@ div.breakpoint.xl {
   color: var(--white);
 }
 
-.login {
+.login,
+.logout {
+  display: flex;
+  align-items: center;
+}
+
+.logout {
   display: none;
 }
 
@@ -131,6 +137,7 @@ div.breakpoint.xl {
 
 .logout span {
   display: inline-block;
+  margin-right: 0.25rem;
   max-width: 200px;
   max-height: 1.5em;
   text-align: right;
@@ -184,7 +191,7 @@ div.breakpoint.xl {
   }
 
   .login input {
-    margin-right: 0.1rem;
+    margin-right: 0.25rem;
     margin-bottom: 0;
     width: 10rem;
   }
