@@ -3,7 +3,7 @@ export default class Cleanup {
     this.signals = [signals].flat().concat(rest);
     this.callbacks = [];
     this.signals.forEach((signal) => {
-      process.on(signal, () => this.run(signal));
+      process.on(signal, () => this.runOnce(signal, 0));
     });
   }
 

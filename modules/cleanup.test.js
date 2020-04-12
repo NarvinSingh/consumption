@@ -1,16 +1,17 @@
 import Cleanup from './cleanup.mjs';
 
 describe('Cleanup class tests', () => {
-  test('Insantiate class with default parameter and add process listenters', () => {
-    expect.assertions(6);
+  afterEach(() => {
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGQUIT');
+    process.removeAllListeners('SIGTERM');
+  });
+
+  test('Insantiate class', () => {
+    expect.assertions(1);
     const cleanup = new Cleanup();
 
     expect(cleanup).toBeInstanceOf(Cleanup);
-    expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT', 'SIGTERM']);
-    expect(cleanup.callbacks).toStrictEqual([]);
-    expect(process.listenerCount('SIGINT')).toBe(1);
-    expect(process.listenerCount('SIGQUIT')).toBe(1);
-    expect(process.listenerCount('SIGTERM')).toBe(1);
   });
 
   test('Insantiate class with an array parameter', () => {
@@ -39,6 +40,27 @@ describe('Cleanup class tests', () => {
     const cleanup = new Cleanup('SIGINT', 'SIGQUIT');
 
     expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT']);
+  });
+
+  test('Add default process listenters', () => {
+    expect.assertions(4);
+    const cleanup = new Cleanup();
+
+    expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT', 'SIGTERM']);
+    expect(process.listenerCount('SIGINT')).toBe(1);
+    expect(process.listenerCount('SIGQUIT')).toBe(1);
+    expect(process.listenerCount('SIGTERM')).toBe(1);
+  });
+
+  test('Call process listenters', () => {
+    expect.assertions(2);
+    const cleanup = new Cleanup('SIGINT');
+    const mockRunOnce = jest.fn();
+
+    cleanup.runOnce = mockRunOnce;
+    process.listeners('SIGINT')[0]();
+    expect(mockRunOnce).toHaveBeenCalledTimes(1);
+    expect(mockRunOnce).toHaveBeenCalledWith('SIGINT', 0);
   });
 
   test('Add a single callback passed as an individual parameter', () => {
