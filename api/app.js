@@ -7,29 +7,37 @@ import loginRouter from './login-router.mjs';
 import logoutRouter from './logout-router.mjs';
 
 const cleanup = new Cleanup();
+const connectPromise = connect();
 
-// Connect to the db first
 console.log(`Connecting to database ${process.env.MONGODB_DB}...`);
-connect().then((client) => {
+
+// Add a cleanup callback that will await the connect promise so that if a term signal is received
+// before the connection is completed, we will wait for the connection to complete and close it
+// beore exiting
+cleanup.addCallbacks(async (signal) => {
+  try {
+    const client = await connectPromise;
+
+    if (client.isConnected) {
+      await client.close();
+      console.log('Database connection closed');
+    }
+  } catch (err) {
+    if (err && err.name !== signal) console.log(err);
+  }
+});
+
+// Await the connect promise again to continue with the app
+connectPromise.then((client) => {
   if (!client.isConnected) {
     throw new Error('Database is disconnected');
   }
 
   console.log(`Connected to database ${process.env.MONGODB_DB}`);
-  cleanup.addCallbacks(async () => {
-    if (client.isConnected) {
-      try {
-        await client.close();
-        console.log('Database connection closed');
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  });
 
   return client;
 
-// Only start the server once connected to the db
+// Start the server after we are connected to the db
 }).then((client) => {
   const app = express();
 
@@ -58,5 +66,5 @@ connect().then((client) => {
   });
 }).catch((err) => {
   console.log(err);
-  cleanup.run('Exception', 1);
+  cleanup.runOnce(err.name || 'Exception', 1);
 });
