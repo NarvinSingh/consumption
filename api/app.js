@@ -44,8 +44,11 @@ connect().then((client) => {
   cleanup.addCallbacks(async () => {
     if (server.listening) {
       try {
-        await new Promise((resolve) => {
-          server.close(resolve);
+        await new Promise((resolve, reject) => {
+          server.close((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
         console.log('Server closed');
       } catch (err) {
