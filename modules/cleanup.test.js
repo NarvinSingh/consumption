@@ -77,8 +77,8 @@ describe('Cleanup class tests', () => {
     expect(cleanup.callbacks).toStrictEqual(callbacks);
   });
 
-  test('Run cleanup with a single callback', async () => {
-    expect.assertions(4);
+  test('Run cleanup with a single callback and not exit', async () => {
+    expect.assertions(3);
     const cleanup = new Cleanup();
     const callback = jest.fn(() => Promise.resolve());
     const mockExit = jest.fn();
@@ -89,13 +89,29 @@ describe('Cleanup class tests', () => {
     await cleanup.run('Exception');
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception');
+    expect(mockExit).not.toHaveBeenCalled();
+    process.exit = realExit;
+  });
+
+  test('Run cleanup with a single callback and exit', async () => {
+    expect.assertions(4);
+    const cleanup = new Cleanup();
+    const callback = jest.fn(() => Promise.resolve());
+    const mockExit = jest.fn();
+    const realExit = process.exit;
+
+    process.exit = mockExit;
+    cleanup.addCallbacks(callback);
+    await cleanup.run('Exception', 0);
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('Exception');
     expect(mockExit).toHaveBeenCalledTimes(1);
     expect(mockExit).toHaveBeenCalledWith(0);
     process.exit = realExit;
   });
 
-  test('Run cleanup with multiple callbacks', async () => {
-    expect.assertions(6);
+  test('Run cleanup with multiple callbacks and not exit', async () => {
+    expect.assertions(5);
     const cleanup = new Cleanup();
     const callbacks = [jest.fn(() => Promise.resolve()), jest.fn(() => Promise.resolve())];
     const mockExit = jest.fn();
@@ -108,8 +124,38 @@ describe('Cleanup class tests', () => {
     expect(callbacks[0]).toHaveBeenCalledWith('Exception');
     expect(callbacks[1]).toHaveBeenCalledTimes(1);
     expect(callbacks[1]).toHaveBeenCalledWith('Exception');
+    expect(mockExit).not.toHaveBeenCalled();
+    process.exit = realExit;
+  });
+
+  test('Run cleanup with multiple callbacks and exit', async () => {
+    expect.assertions(6);
+    const cleanup = new Cleanup();
+    const callbacks = [jest.fn(() => Promise.resolve()), jest.fn(() => Promise.resolve())];
+    const mockExit = jest.fn();
+    const realExit = process.exit;
+
+    process.exit = mockExit;
+    cleanup.addCallbacks(callbacks);
+    await cleanup.run('Exception', 0);
+    expect(callbacks[0]).toHaveBeenCalledTimes(1);
+    expect(callbacks[0]).toHaveBeenCalledWith('Exception');
+    expect(callbacks[1]).toHaveBeenCalledTimes(1);
+    expect(callbacks[1]).toHaveBeenCalledWith('Exception');
     expect(mockExit).toHaveBeenCalledTimes(1);
     expect(mockExit).toHaveBeenCalledWith(0);
     process.exit = realExit;
+  });
+
+  test('Cleanup only runs once', async () => {
+    expect.assertions(2);
+    const cleanup = new Cleanup();
+    const callback = jest.fn(() => Promise.resolve());
+
+    cleanup.addCallbacks(callback);
+    await cleanup.runOnce('Exception 1');
+    await cleanup.runOnce('Exception 2');
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('Exception 1');
   });
 });

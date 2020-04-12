@@ -11,10 +11,20 @@ export default class Cleanup {
     this.callbacks.push(...callbacks.flat());
   }
 
-  async run(signal, code = 0) {
+  async run(signal, exitCode) {
     console.log(`${signal} received`);
     await Promise.all(this.callbacks.map(async (callback) => callback(signal)));
-    console.log('App will exit now');
-    process.exit(code);
+
+    if (exitCode !== undefined) {
+      console.log('App will exit now');
+      process.exit(exitCode);
+    }
+  }
+
+  async runOnce(signal, exitCode) {
+    if (this.hasRun) return;
+
+    this.hasRun = true;
+    this.run(signal, exitCode);
   }
 }
