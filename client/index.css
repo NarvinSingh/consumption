@@ -39,7 +39,10 @@
   --grad-dark-success: #699934;
   --dark-text: #495057;
   --light-border: #CED4DA;
+  --primary-active-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.5);
+  /* --primary-active-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.75); */
   --success-border: #59822C;
+  --transition: 0.5s ease-in-out;
   --d-flex-xs-only: flex;
   --d-flex-sm-only: none;
   --d-flex-md-only: none;
@@ -77,7 +80,7 @@ a {
   text-decoration: none;
   font-weight: 400;
   color: var(--primary);
-  transition: color 0.15s ease-in-out;
+  transition: color var(--transition);
 }
 
 a:hover {
@@ -101,6 +104,11 @@ button {
 input {
   background-color: var(--white);
   color: var(--dark-text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+input:focus {
+  box-shadow: var(--primary-active-shadow);
 }
 
 button {
@@ -111,14 +119,14 @@ button {
   color: var(--white);
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  transition: border-color var(--transition), color var(--transition);
 }
 
 button svg {
   width: 1rem;
   height: 1rem;
   fill: var(--white);
-  transition: fill 0.15s ease-in-out;
+  transition: fill var(--transition);
 }
 
 button:hover {
@@ -190,6 +198,14 @@ section.login {
 section.register h1,
 section.login h1 {
   display: none;
+}
+
+section.register form {
+  margin-bottom: 1.5rem;
+}
+
+section.login form {
+  margin-top: 1.5rem;
 }
 
 section.register form,
@@ -308,7 +324,7 @@ form.logout button span {
   }
 }
 
-/* section.register, */
+section.register,
 section.login,
 form.logout,
 .inactive
