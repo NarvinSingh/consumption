@@ -39,15 +39,20 @@
     </div>
     <form action="POST">
       <input id="inputRegisterName" type="text" placeholder="Name">
+      <p class="error">Please enter your name</p>
       <input id="inputRegisterEmail" type="text" placeholder="Email">
+      <p class="error">Please enter your email address</p>
       <input id="inputRegisterPassword" type="password" placeholder="Password">
+      <p class="error">Please enter a password</p>
       <input id="inputRegisterPassword2" type="password" placeholder="Confirm password">
+      <p class="error">The passwords you entered don't match</p>
       <button id="buttonRegister" type="submit">Register</button>
     </form>
   </section>
   <section class="login">
     <h1>Sign In</h1>
     <form action="POST">
+      <p class="error">Please enter a valid user ID and password</p>
       <input id="inputUsername" type="text" placeholder="User ID">
       <input id="inputPassword" type="password" placeholder="Password">
       <button id="buttonSignIn" type="submit">Sign In</button>

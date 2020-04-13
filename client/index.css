@@ -40,9 +40,8 @@
   --dark-text: #495057;
   --light-border: #CED4DA;
   --primary-active-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.5);
-  /* --primary-active-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.75); */
   --success-border: #59822C;
-  --transition: 0.5s ease-in-out;
+  --transition: 0.15s ease-in-out;
   --d-flex-xs-only: flex;
   --d-flex-sm-only: none;
   --d-flex-md-only: none;
@@ -215,7 +214,7 @@ section.login form {
   border-radius: 0.25rem;
   padding: 0.75rem;
   box-sizing: border-box;
-  width: 15rem;
+  width: 25rem;
   background-image: linear-gradient(var(--grad-light-primary), var(--primary) 60%, var(--grad-dark-primary));
   background-repeat: no-repeat;
   background-color: var(--primary);
@@ -228,6 +227,22 @@ section.login form button {
   margin: 0.2rem 0;
 }
 
+section.register form p.error,
+section.login form p.error {
+  display: none;
+  margin: 0 0 0.4rem;
+  font-size: smaller;
+  color: var(--red);
+}
+
+section.register form p.error {
+  margin: 0 0 0.4rem;
+}
+
+section.login form p.error {
+  margin: 0;
+}
+
 section.register div,
 section.login div {
   display: flex;
@@ -236,7 +251,7 @@ section.login div {
   border: 1px solid var(--primary);
   border-radius: 0.25rem;
   box-sizing: border-box;
-  width: 15rem;
+  width: 25rem;
   font-size: smaller;
   background-color: var(--white);
 }
@@ -324,8 +339,8 @@ form.logout button span {
   }
 }
 
-section.register,
-section.login,
+/* section.register, */
+/* section.login, */
 form.logout,
 .inactive
 {
