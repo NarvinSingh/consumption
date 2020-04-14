@@ -4,6 +4,7 @@ import MongoServerSelectionError from './mongo-server-selection-error.mjs';
 export default class MongoClient {
   constructor(url, options) {
     this.isMocked = true;
+    this.mock = {};
     this.url = url;
     this.options = options;
   }
@@ -17,6 +18,22 @@ export default class MongoClient {
       return Promise.reject(new MongoServerSelectionError('Authentication failed.'));
     }
 
+    if (this.mock.isFailConnect) {
+      return Promise.reject(new Error('Mock connect failed'));
+    }
+
+    this.mock.isConnected = true;
     return Promise.resolve(this);
+  }
+
+  close() {
+    this.mock.isConnected = false;
+    return this.mock.isFailClose
+      ? Promise.reject(new Error('Mock close failed'))
+      : Promise.resolve();
+  }
+
+  isConnected() {
+    return this.mock.isConnected;
   }
 }
