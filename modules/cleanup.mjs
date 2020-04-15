@@ -22,8 +22,8 @@ export default class Cleanup {
   }
 
   async runOnce(signal, exitCode) {
-    if (this.runOncePromise) return this.runOncePromise;
-    this.runOncePromise = this.run(signal, exitCode);
-    return this.runOncePromise;
+    if (this.hasRun) return;
+    this.hasRun = true;
+    await this.run(signal, exitCode);
   }
 }

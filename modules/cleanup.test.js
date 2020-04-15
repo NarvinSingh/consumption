@@ -180,4 +180,31 @@ describe('Cleanup class tests', () => {
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception 1');
   });
+
+  test('Cleanup running once resolves after run does', async () => {
+    expect.assertions(1);
+    const cleanup = new Cleanup();
+    const callback = jest.fn(() => Promise.resolve());
+    const events = [];
+
+    cleanup.mock = { run: cleanup.run, runOnce: cleanup.runOnce };
+    cleanup.run = async function mockRun(...args) {
+      const result = await cleanup.mock.run.call(this, ...args);
+      events.push({ method: 'run', args });
+      return result;
+    };
+    cleanup.runOnce = async function mockRunOnce(...args) {
+      const result = await cleanup.mock.runOnce.call(this, ...args);
+      events.push({ method: 'runOnce', args });
+      return result;
+    };
+    cleanup.addCallbacks(callback);
+    await cleanup.runOnce('Exception 1');
+    events.push('done');
+    expect(events).toStrictEqual([
+      { method: 'run', args: ['Exception 1', undefined] },
+      { method: 'runOnce', args: ['Exception 1'] },
+      'done',
+    ]);
+  });
 });
