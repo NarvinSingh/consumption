@@ -33,7 +33,7 @@ client.connect()
       console.log('5e8d4bc1ea05d315ac15d5d4 not found');
     }
 
-    return col.findOne( { _id: ObjectID('5e8d4754e468ea1f082d513b') });
+    return col.findOne({ _id: ObjectID('5e8d4754e468ea1f082d513b') });
   })
   .then((doc) => {
     if (doc) {
