@@ -1,7 +1,7 @@
 import 'dotenv/config.js';
 import mongodb from 'mongodb';
 
-export default async function connect(
+export default function connect(
   host = process.env.MONGODB_HOST,
   dbName = process.env.MONGODB_DB,
   username = process.env.MONGODB_USERNAME,
