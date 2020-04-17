@@ -100,18 +100,21 @@ describe('Cleanup class tests', () => {
   });
 
   test('Run cleanup with a single callback and not exit', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     const cleanup = new Cleanup();
     const callback = jest.fn(() => Promise.resolve());
     const mockExit = jest.fn();
     const realExit = process.exit;
+    const events = [];
 
     process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callback);
     await cleanup.run('Exception');
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception');
     expect(mockExit).not.toHaveBeenCalled();
+    expect(events).toStrictEqual(['Exception received']);
     process.exit = realExit;
   });
 
@@ -151,13 +154,15 @@ describe('Cleanup class tests', () => {
   });
 
   test('Run cleanup with multiple callbacks and exit', async () => {
-    expect.assertions(6);
+    expect.assertions(7);
     const cleanup = new Cleanup();
     const callbacks = [jest.fn(() => Promise.resolve()), jest.fn(() => Promise.resolve())];
     const mockExit = jest.fn();
     const realExit = process.exit;
+    const events = [];
 
     process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callbacks);
     await cleanup.run('Exception', 0);
     expect(callbacks[0]).toHaveBeenCalledTimes(1);
@@ -166,19 +171,23 @@ describe('Cleanup class tests', () => {
     expect(callbacks[1]).toHaveBeenCalledWith('Exception');
     expect(mockExit).toHaveBeenCalledTimes(1);
     expect(mockExit).toHaveBeenCalledWith(0);
+    expect(events).toStrictEqual(['Exception received', 'App will exit now']);
     process.exit = realExit;
   });
 
   test('Cleanup only runs once', async () => {
-    expect.assertions(2);
+    expect.assertions(3);
     const cleanup = new Cleanup();
     const callback = jest.fn(() => Promise.resolve());
+    const events = [];
 
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callback);
     await cleanup.runOnce('Exception 1');
     await cleanup.runOnce('Exception 2');
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception 1');
+    expect(events).toStrictEqual(['Exception 1 received']);
   });
 
   test('Cleanup running once resolves after run does', async () => {

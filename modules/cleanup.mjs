@@ -1,5 +1,9 @@
-export default class Cleanup {
+import mix from './mix.mjs';
+import observable from './observable.mjs';
+
+const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
   constructor(signals = ['SIGINT', 'SIGQUIT', 'SIGTERM'], ...rest) {
+    super();
     this.signals = [signals].flat().concat(rest);
     this.callbacks = [];
     this.signals.forEach((signal) => {
@@ -12,11 +16,11 @@ export default class Cleanup {
   }
 
   async run(signal, exitCode) {
-    console.log(`${signal} received`);
+    this.notifyObservers(`${signal} received`);
     await Promise.all(this.callbacks.map(async (callback) => callback(signal)));
 
     if (exitCode !== undefined) {
-      console.log('App will exit now');
+      this.notifyObservers('App will exit now');
       process.exit(exitCode);
     }
   }
@@ -26,4 +30,6 @@ export default class Cleanup {
     this.hasRun = true;
     await this.run(signal, exitCode);
   }
-}
+};
+
+export default mix(cleanup, observable);
