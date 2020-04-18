@@ -24,7 +24,7 @@ console.log('result', result);
 console.timeEnd('entry 1');
 console.log();
 
-// The promise executor runs immediately, synchronously and will block
+// The function runs immediately, synchronously and will block
 console.time('entry 2');
 console.timeLog('entry 2');
 const result2 = asyncFoo();
@@ -32,7 +32,7 @@ console.log('result', result2);
 console.timeEnd('entry 2');
 console.log();
 
-// The promise executor runs immediately, synchronously and will block
+// The function runs immediately, synchronously and will block
 (async () => {
   console.time('entry 3');
   console.timeLog('entry 3');

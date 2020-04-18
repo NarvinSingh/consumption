@@ -1,5 +1,12 @@
 /* eslint-disable no-console */
 
+// Only declare a function async when you need to await a promise inside of it. Don't declare a
+// function async simply to wrap the return value or thrown error in a promise because that usually
+// means the function is synchronous and should just return a non-promise value or throw an error.
+// In particular, you shouldn't delare a function async when the function returns the value of
+// another function that is already a promise or you are creating multiple promises and selecting
+// one to return.
+
 // Declaring a function async wraps the return value in a resolved promise or a thrown error in a
 // rejected promise
 // Awaiting a function blocks until the function returns, then returns the value of a resolved
