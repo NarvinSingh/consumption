@@ -4,6 +4,7 @@
   },
   "extends": "airbnb-base",
   "rules": {
-    "import/extensions": ["error", "always"]
+    "import/extensions": ["error", "always"],
+    "object-curly-newline": ["error", { "multiline": true }]
   }
 }
