@@ -15,20 +15,20 @@ const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
     this.callbacks.push(...callbacks.flat());
   }
 
-  async run(signal, exitCode) {
+  run(signal, exitCode) {
     this.notifyObservers(`${signal} received`);
-    await Promise.all(this.callbacks.map(async (callback) => callback(signal)));
+    this.lastRunResult = Promise.all(this.callbacks.map((callback) => callback(signal)));
 
     if (exitCode !== undefined) {
       this.notifyObservers('App will exit now');
       process.exit(exitCode);
     }
+
+    return this.lastRunResult;
   }
 
-  async runOnce(signal, exitCode) {
-    if (this.hasRun) return;
-    this.hasRun = true;
-    await this.run(signal, exitCode);
+  runOnce(signal, exitCode) {
+    return this.lastRunResult || this.run(signal, exitCode);
   }
 };
 
