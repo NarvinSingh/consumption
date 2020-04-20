@@ -39,25 +39,6 @@ function connectDb(app) {
     }).then((client) => {
       if (client === undefined) notify('disconnected');
     }).catch((reason) => { notify(reason.message, reason); });
-
-    // async version
-    // let client;
-
-    // try {
-    //   client = await connectResult;
-    // } catch (err) {
-    //   notify('not connected');
-    //   return;
-    // }
-
-    // try {
-    //   if (client && client.isConnected()) {
-    //     await client.close();
-    //     notify('disconnected');
-    //   }
-    // } catch (err) {
-    //   notify(err.message, err);
-    // }
   });
 
   return connectResult;
@@ -102,18 +83,20 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
         });
       });
 
-      this.cleanup.addCallbacks(async () => {
+      this.cleanup.addCallbacks(() => {
         if (this.server.listening) {
-          try {
-            await new Promise((resolve) => {
-              this.server.close((err) => {
-                if (err) notify(err.message, err);
-                resolve();
-              });
+          return new Promise((resolve) => {
+            this.server.close((err) => {
+              if (err) notify(err.message, err);
+              resolve();
             });
+          }).then(() => {
             notify('closed');
-          } catch (err) { notify(err.message, err); }
+          }).catch((reason) => {
+            notify(reason.message, reason);
+          });
         }
+        return notify('not listening');
       });
 
       return Promise.race([listenResult, errorResult]);
@@ -135,68 +118,3 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
 };
 
 export default mix(expressApp, observable);
-
-// async startServer() {
-//   if (this.server) return this;
-
-//   const notify = curry(notifyObservers, this, 'server', this.name);
-//   const error = curry(createError, this, 'server', this.name);
-//   this.cleanup = new Cleanup();
-//   this.cleanup.addObservers(notify);
-
-//   try {
-//     const { port, dbCol, app } = this;
-//     const client = await connectDb(this, this.cleanup);
-
-//     if (client) app.locals.dbCol = client.db().collection(dbCol);
-
-//     const listenResult = new Promise((resolve) => {
-//       this.server = app.listen(port, () => {
-//         notify('listening', { port });
-//         resolve(this);
-//       });
-//     });
-
-//     const errorResult = new Promise((resolve, reject) => {
-//       this.server.on('error', (err) => {
-//         notify(err.message, err);
-//         reject(error(err.message, err));
-//       });
-//     });
-
-//     this.cleanup.addCallbacks(async () => {
-//       if (this.server.listening) {
-//         try {
-//           await new Promise((resolve, reject) => {
-//             this.server.close((err) => {
-//               if (err) reject(err);
-//               else resolve();
-//             });
-//           });
-//         } catch (err) { notify(err.message, err); }
-//       }
-//       notify('closed');
-//     });
-
-//     return Promise.race([listenResult, errorResult]);
-//   } catch (err) {
-//     notify(err.message, err);
-//     await this.cleanup.runOnce(err.message);
-//     throw error(err.message, err);
-//   }
-// }
-
-// const errorResult = new Promise((resolve, reject) => {
-//   this.server.on('error', async (err) => {
-//     await this.cleanup.runOnce(fmtErr(err));
-//     reject(this.server);
-//   });
-// });
-
-// this.server.on('close', (err) => { notify('closed', err); });
-// const closeResult = new Promise((resolve) => {
-//   this.server.on('close', async () => {
-//     await this.cleanup.runOnce(fmtMsg('onClose'));
-//     resolve(this.server);
-//   });
-// });

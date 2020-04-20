@@ -84,6 +84,7 @@ describe('API server tests', () => {
         event: 'listen EADDRINUSE: address already in use :::3000',
       },
       { type: 'server', name: 'Test B', event: 'stop received' },
+      { type: 'server', name: 'Test B', event: 'not listening' },
       { type: 'server', name: 'Test A', event: 'stop received', data: {} },
       { type: 'server', name: 'Test A', event: 'closed', data: {} },
     ]);
