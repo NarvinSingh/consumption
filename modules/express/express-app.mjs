@@ -30,16 +30,14 @@ function connectDb(app) {
     return client;
   }).catch((reason) => { throw error(reason.message, reason); });
 
-  cleanup.addCallbacks(() => {
-    connectResult.catch(() => {
-      notify('not connected');
-    }).then((client) => {
-      if (client && client.isConnected()) return client.close();
-      return null;
-    }).then((client) => {
-      if (client === undefined) notify('disconnected');
-    }).catch((reason) => { notify(reason.message, reason); });
-  });
+  cleanup.addCallbacks(() => connectResult.catch(() => {
+    notify('not connected');
+  }).then((client) => {
+    if (client && client.isConnected()) return client.close();
+    return null;
+  }).then((client) => {
+    if (client === undefined) notify('disconnected');
+  }).catch((reason) => { notify(reason.message, reason); }));
 
   return connectResult;
 }
