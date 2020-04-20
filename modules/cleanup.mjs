@@ -7,7 +7,7 @@ const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
     this.signals = [signals].flat().concat(rest);
     this.callbacks = [];
     this.signals.forEach((signal) => {
-      process.on(signal, () => this.runOnce(signal, 0));
+      process.on(signal, () => { this.runOnce(signal, 0); });
     });
   }
 
@@ -18,11 +18,12 @@ const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
   run(signal, exitCode) {
     this.notifyObservers(`${signal} received`);
     this.lastRunResult = Promise.all(this.callbacks.map((callback) => callback(signal)));
-
-    if (exitCode !== undefined) {
-      this.notifyObservers('App will exit now');
-      process.exit(exitCode);
-    }
+    this.lastRunResult.finally(() => {
+      if (exitCode !== undefined) {
+        this.notifyObservers('App will exit now');
+        process.exit(exitCode);
+      }
+    });
 
     return this.lastRunResult;
   }

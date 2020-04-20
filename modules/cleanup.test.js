@@ -216,4 +216,48 @@ describe('Cleanup class tests', () => {
       'done',
     ]);
   });
+
+  test('Cleanup callbacks run before process listeners', (done) => {
+    expect.assertions(7);
+    const cleanup = new Cleanup('SIGINT');
+    const events = [];
+    const callbackResolve = jest.fn();
+    const callbackReject = jest.fn();
+    const mockExit = jest.fn();
+    const realExit = process.exit;
+
+    cleanup.addCallbacks(callbackResolve, callbackReject);
+    callbackResolve.mockImplementation(() => new Promise((resolve) => {
+      process.nextTick(() => {
+        console.log('resolve');
+        events.push('callbackResolve');
+        resolve();
+      });
+    }));
+    callbackReject.mockImplementation(() => new Promise((resolve, reject) => {
+      process.nextTick(() => {
+        console.log('reject');
+        events.push('callbackReject');
+        reject();
+      });
+    }));
+    mockExit.mockImplementation(() => {
+      events.push('processSigint');
+      expect(callbackResolve).toHaveBeenCalledTimes(1);
+      expect(callbackReject).toHaveBeenCalledTimes(1);
+      expect(mockExit).toHaveBeenCalledTimes(1);
+      expect(events).toStrictEqual([
+        'callbackResolve',
+        'callbackReject',
+        'processSigint',
+      ]);
+      process.exit = realExit;
+      done();
+    });
+    process.exit = mockExit;
+    expect(callbackResolve).not.toHaveBeenCalled();
+    expect(callbackReject).not.toHaveBeenCalled();
+    expect(mockExit).not.toHaveBeenCalled();
+    process.listeners('SIGINT')[0]();
+  });
 });
