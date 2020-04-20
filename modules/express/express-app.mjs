@@ -117,4 +117,18 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
   }
 };
 
-export default mix(expressApp, observable);
+const ExpressApp = mix(expressApp, observable);
+
+function summarize(msg) {
+  const { event, data } = msg;
+
+  if (data instanceof Error && data.details) {
+    const { componentType: type, componentName: name } = data.details;
+    return { type, name, event, data };
+  }
+
+  const { componentType: type, componentName: name } = msg;
+  return { type, name, event, data };
+}
+
+export { ExpressApp, summarize };

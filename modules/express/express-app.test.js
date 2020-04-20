@@ -1,22 +1,10 @@
 import 'dotenv/config.js';
-import ExpressApp from './express-app.mjs';
+import { ExpressApp, summarize } from './express-app.mjs';
 import MongoClient from '../mongodb/__mocks__/mongo-client.mjs';
-
-function createPayload(msg) {
-  const { event, data } = msg;
-
-  if (data instanceof Error && data.details) {
-    const { componentType: type, componentName: name } = data.details;
-    return { type, name, event, data };
-  }
-
-  const { componentType: type, componentName: name } = msg;
-  return { type, name, event, data };
-}
 
 function makeObserver(events) {
   return (msg) => {
-    const payload = createPayload(msg);
+    const payload = summarize(msg);
     events.push(payload);
     // console.log(payload);
   };
@@ -24,7 +12,7 @@ function makeObserver(events) {
 
 function makeLightObserver(events) {
   return (msg) => {
-    const { type, name, event } = createPayload(msg);
+    const { type, name, event } = summarize(msg);
     events.push({ type, name, event });
     // console.log({ type, name, event });
   };
