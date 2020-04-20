@@ -1,10 +1,11 @@
+import Db from './db.mjs';
 import MongoParseError from './mongo-parse-error.mjs';
 import MongoServerSelectionError from './mongo-server-selection-error.mjs';
 
 export default class MongoClient {
   constructor(url, options) {
-    this.isMocked = true;
-    this.mock = {};
+    MongoClient.mock.instances.push(this);
+    this.mock = { db: new Db() };
     this.url = url;
     this.options = options;
   }
@@ -23,6 +24,7 @@ export default class MongoClient {
     }
 
     this.mock.isConnected = true;
+    MongoClient.mock.connectHooks.forEach((hook) => { hook(this); });
     return Promise.resolve(this);
   }
 
@@ -36,4 +38,10 @@ export default class MongoClient {
   isConnected() {
     return this.mock.isConnected;
   }
+
+  db() {
+    return this.mock.db;
+  }
 }
+
+MongoClient.mock = { instances: [], connectHooks: [] };
