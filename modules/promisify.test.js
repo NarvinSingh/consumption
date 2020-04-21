@@ -59,4 +59,22 @@ describe('promisify tests', () => {
     expect(fn).toHaveBeenCalledTimes(1);
     expect(value).toBe('resolved 1, 2, 3');
   });
+
+  test('Promisify a function that has access to a context', async () => {
+    expect.assertions(3);
+
+    const fn = jest.fn(function fn(callback) {
+      const { value } = this;
+      setImmediate(() => { callback(null, `resolved ${value}`); });
+    });
+    const obj = { value: 1, fn };
+    const fnPromise = promisify(fn, obj);
+    const value = await fnPromise();
+    obj.fnPromise = promisify(obj.fn, obj);
+    const value2 = await obj.fnPromise();
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(value).toBe('resolved 1');
+    expect(value2).toBe('resolved 1');
+  });
 });
