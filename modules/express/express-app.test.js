@@ -82,7 +82,11 @@ describe('API server tests', () => {
     expect.assertions(8);
 
     const events = [];
-    const app = new ExpressApp('Test', 3000, 'db-host', 'myDb', 'user', 'password');
+    const app = new ExpressApp(
+      'Test',
+      3000,
+      [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+    );
 
     app.addObservers(makeObserver(events));
     await app.startServer(); // Start server
@@ -113,11 +117,61 @@ describe('API server tests', () => {
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
   });
 
+  test('Start and stop server with multiple database connections', async () => {
+    expect.assertions(8);
+
+    const events = [];
+    const app = new ExpressApp(
+      'Test',
+      3000,
+      [
+        { host: 'db-host', db: 'myDb', username: 'user', password: 'password' },
+        { host: 'db-host-2', db: 'myDb2', username: 'user', password: 'password' },
+      ],
+    );
+
+    app.addObservers(makeObserver(events));
+    await app.startServer(); // Start server
+    expect(app.server.listening).toBe(true);
+    await app.stopServer(); // Stop server
+    expect(app.server).toBeNull();
+    await app.startServer(); // Restart server after being stopped
+    expect(app.server.listening).toBe(true);
+    await app.stopServer(); // Stop server after restart
+    expect(app.server).toBeNull();
+    await app.startServer(); // Retart server again
+    expect(app.server.listening).toBe(true);
+    await app.startServer(); // Try to start server while it's already started
+    expect(app.server.listening).toBe(true);
+    await app.stopServer(); // Stop server after second restart
+    expect(app.server).toBeNull();
+    const startEvents = [
+      { type: 'db', name: 'myDb', event: 'connecting', data: {} },
+      { type: 'db', name: 'myDb2', event: 'connecting', data: {} },
+      { type: 'db', name: 'myDb', event: 'connected', data: {} },
+      { type: 'db', name: 'myDb2', event: 'connected', data: {} },
+      { type: 'server', name: 'Test', event: 'listening', data: { port: 3000 } },
+    ];
+    const stopEvents = [
+      { type: 'server', name: 'Test', event: 'stop received', data: {} },
+      { type: 'db', name: 'myDb', event: 'disconnected', data: {} },
+      { type: 'db', name: 'myDb2', event: 'disconnected', data: {} },
+      { type: 'server', name: 'Test', event: 'closed', data: {} },
+    ];
+    const startStopEvents = [...startEvents, ...stopEvents];
+    console.log(events);
+    expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
+  });
+
   test('Can\'t start the server if the database host is invalid', async () => {
     expect.assertions(3);
 
     const events = [];
-    const app = new ExpressApp('Test', 3000, 'notahost', 'myDb', 'user', 'password');
+    const app = new ExpressApp(
+      'Test',
+      3000,
+      [{ host: 'notahost', db: 'myDb', username: 'user', password: 'password' }],
+    );
 
     app.addObservers(makeLightObserver(events));
     await app.startServer(); // Start server
@@ -140,7 +194,11 @@ describe('API server tests', () => {
 
     const events = [];
     MongoClient.mock.connectHooks.push((client) => { client.mock.isConnected = false; });
-    const app = new ExpressApp('Test', 3000, 'db-host', 'myDb', 'user', 'password');
+    const app = new ExpressApp(
+      'Test',
+      3000,
+      [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+    );
 
     app.addObservers(makeLightObserver(events));
     await app.startServer(); // Start server

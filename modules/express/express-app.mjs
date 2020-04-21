@@ -15,43 +15,41 @@ function createError(app, componentType, componentName, message, data = {}) {
   return err;
 }
 
-function connectDb(app) {
-  const { dbHost, db, dbUsername, dbPassword, cleanup } = app;
+function connectDbs(app) {
+  const { cleanup } = app;
 
-  if (!dbHost) return Promise.resolve(null);
+  return Promise.all(app.dbSpecs.map((spec) => {
+    const { host, db, username, password } = spec;
 
-  const notify = curry(notifyObservers, app, 'db', db);
-  const error = curry(createError, app, 'db', db);
+    const notify = curry(notifyObservers, app, 'db', db);
+    const error = curry(createError, app, 'db', db);
 
-  notify('connecting');
-  const connectResult = connect(dbHost, db, dbUsername, dbPassword).then((client) => {
-    if (!client.isConnected()) throw error('failed to connect');
-    notify('connected');
-    return client;
-  }).catch((reason) => { throw error(reason.message, reason); });
+    notify('connecting');
+    const connectResult = connect(host, db, username, password).then((client) => {
+      if (!client.isConnected()) throw error('failed to connect');
+      notify('connected');
+      return client;
+    }).catch((reason) => { throw error(reason.message, reason); });
 
-  cleanup.addCallbacks(() => connectResult.catch(() => {
-    notify('not connected');
-  }).then((client) => {
-    if (client && client.isConnected()) return client.close();
-    return null;
-  }).then((client) => {
-    if (client === undefined) notify('disconnected');
-  }).catch((reason) => { notify(reason.message, reason); }));
+    cleanup.addCallbacks(() => connectResult.catch(() => {
+      notify('not connected');
+    }).then((client) => {
+      if (client && client.isConnected()) return client.close();
+      return null;
+    }).then((client) => {
+      if (client === undefined) notify('disconnected');
+    }).catch((reason) => { notify(reason.message, reason); }));
 
-  return connectResult;
+    return connectResult;
+  }));
 }
 
 const expressApp = (Superclass = Object) => class ExpressApp extends Superclass {
-  constructor(name = 'API', port = 3000, dbHost, db, dbCol, dbUsername, dbPassword, ...superArgs) {
+  constructor(name = 'API', port = 3000, dbSpecs = [], ...superArgs) {
     super(...superArgs);
     this.name = name;
     this.port = port;
-    this.dbHost = dbHost;
-    this.db = db;
-    this.dbCol = dbCol;
-    this.dbUsername = dbUsername;
-    this.dbPassword = dbPassword;
+    this.dbSpecs = dbSpecs;
     this.app = express();
   }
 
@@ -62,10 +60,10 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
     this.cleanup = new Cleanup();
     this.cleanup.addObservers(notify);
 
-    const { port, dbCol, app } = this;
+    const { port, app } = this;
 
-    return connectDb(this).then((client) => {
-      if (client) app.locals.dbCol = client.db().collection(dbCol);
+    return connectDbs(this).then((clients) => {
+      app.locals.dbClients = clients;
 
       const listenResult = new Promise((resolve) => {
         this.server = app.listen(port, () => {
