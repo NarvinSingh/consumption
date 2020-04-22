@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import mix from './mix.mjs';
+import { mix } from './utils.mjs';
 
 const speaker = (Superclass = Object) => class Speaker extends Superclass {
   constructor(sound, ...superArgs) {

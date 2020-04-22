@@ -1,4 +1,4 @@
-import curry from './curry.mjs';
+import { curry } from './utils.mjs';
 
 describe('Curry tests', () => {
   const square = (x) => x * x;

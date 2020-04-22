@@ -1,4 +1,4 @@
-import promisify from './promisify.mjs';
+import { promisify } from './utils.mjs';
 
 describe('promisify tests', () => {
   test('Promisify a function that succeeds', async () => {

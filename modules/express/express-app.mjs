@@ -1,10 +1,8 @@
 import express from 'express';
 import connect from '../mongodb/connect.mjs';
 import Cleanup from '../cleanup.mjs';
-import curry from '../curry.mjs';
-import promisify from '../promisify.mjs';
-import mix from '../mix.mjs';
 import observable from '../observable.mjs';
+import { curry, mix, promisify } from '../utils.mjs';
 
 function notifyObservers(app, componentType, componentName, event, data = {}) {
   app.notifyObservers({ app, componentType, componentName, event, data });
