@@ -7,11 +7,18 @@ describe('Cleanup class tests', () => {
     process.removeAllListeners('SIGTERM');
   });
 
-  test('Insantiate class', () => {
-    expect.assertions(1);
+  test('Insantiate class and run it to remove process listeners', async () => {
+    expect.assertions(7);
     const cleanup = new Cleanup();
 
     expect(cleanup).toBeInstanceOf(Cleanup);
+    expect(process.listenerCount('SIGINT')).toBe(1);
+    expect(process.listenerCount('SIGQUIT')).toBe(1);
+    expect(process.listenerCount('SIGTERM')).toBe(1);
+    await cleanup.run();
+    expect(process.listenerCount('SIGINT')).toBe(0);
+    expect(process.listenerCount('SIGQUIT')).toBe(0);
+    expect(process.listenerCount('SIGTERM')).toBe(0);
   });
 
   test('Insantiate class with an array parameter', () => {
@@ -58,7 +65,7 @@ describe('Cleanup class tests', () => {
     const mockRunOnce = jest.fn();
 
     cleanup.runOnce = mockRunOnce;
-    process.listeners('SIGINT')[0]();
+    process.listeners('SIGINT')[0]('SIGINT');
     expect(mockRunOnce).toHaveBeenCalledTimes(1);
     expect(mockRunOnce).toHaveBeenCalledWith('SIGINT', 0);
   });
@@ -217,47 +224,35 @@ describe('Cleanup class tests', () => {
     ]);
   });
 
-  test('Cleanup callbacks run before process listeners', (done) => {
-    expect.assertions(7);
+  test('Cleanup callback runs before process listeners', (done) => {
+    expect.assertions(5);
     const cleanup = new Cleanup('SIGINT');
     const events = [];
-    const callbackResolve = jest.fn();
-    const callbackReject = jest.fn();
+    const callback = jest.fn();
     const mockExit = jest.fn();
     const realExit = process.exit;
 
-    cleanup.addCallbacks(callbackResolve, callbackReject);
-    callbackResolve.mockImplementation(() => new Promise((resolve) => {
+    cleanup.addCallbacks(callback);
+    callback.mockImplementation(() => new Promise((resolve) => {
       process.nextTick(() => {
-        console.log('resolve');
         events.push('callbackResolve');
         resolve();
       });
     }));
-    callbackReject.mockImplementation(() => new Promise((resolve, reject) => {
-      process.nextTick(() => {
-        console.log('reject');
-        events.push('callbackReject');
-        reject();
-      });
-    }));
     mockExit.mockImplementation(() => {
       events.push('processSigint');
-      expect(callbackResolve).toHaveBeenCalledTimes(1);
-      expect(callbackReject).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledTimes(1);
       expect(mockExit).toHaveBeenCalledTimes(1);
       expect(events).toStrictEqual([
         'callbackResolve',
-        'callbackReject',
         'processSigint',
       ]);
       process.exit = realExit;
       done();
     });
     process.exit = mockExit;
-    expect(callbackResolve).not.toHaveBeenCalled();
-    expect(callbackReject).not.toHaveBeenCalled();
+    expect(callback).not.toHaveBeenCalled();
     expect(mockExit).not.toHaveBeenCalled();
-    process.listeners('SIGINT')[0]();
+    process.listeners('SIGINT')[0]('SIGINT');
   });
 });
