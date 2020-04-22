@@ -2,6 +2,7 @@ import express from 'express';
 import connect from '../mongodb/connect.mjs';
 import Cleanup from '../cleanup.mjs';
 import curry from '../curry.mjs';
+import promisify from '../promisify.mjs';
 import mix from '../mix.mjs';
 import observable from '../observable.mjs';
 
@@ -65,28 +66,20 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
     return connectDbs(this).then((clients) => {
       app.locals.dbClients = clients;
 
-      const listenResult = new Promise((resolve) => {
-        this.server = app.listen(port, () => {
-          notify('listening', { port });
-          resolve(this);
-        });
+      this.server = app.listen(port);
+      const listenResult = promisify(this.server.on, this.server)('listening').then(() => {
+        notify('listening', { port });
+        return this;
       });
 
-      const errorResult = new Promise((resolve) => {
-        this.server.on('error', (err) => {
-          notify(err.message, err);
-          this.stopServer().then(() => { resolve(this); });
-        });
-      });
+      const errorResult = promisify(this.server.on, this.server)('error').catch((reason) => {
+        notify(reason.message, reason);
+        return this.stopServer();
+      }).finally(() => this);
 
       this.cleanup.addCallbacks(() => {
         if (this.server.listening) {
-          return new Promise((resolve) => {
-            this.server.close((err) => {
-              if (err) notify(err.message, err);
-              resolve();
-            });
-          }).then(() => {
+          return promisify(this.server.close, this.server)().then(() => {
             notify('closed');
           }).catch((reason) => {
             notify(reason.message, reason);

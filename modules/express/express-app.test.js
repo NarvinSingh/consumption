@@ -159,7 +159,6 @@ describe('API server tests', () => {
       { type: 'server', name: 'Test', event: 'closed', data: {} },
     ];
     const startStopEvents = [...startEvents, ...stopEvents];
-    console.log(events);
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
   });
 
