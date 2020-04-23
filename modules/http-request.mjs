@@ -34,13 +34,16 @@ function request(url, options, reqBody = '') {
 }
 
 const httpRequest = {
-  get(url) {
-    return request(url, { method: 'GET' });
+  get(url, headers = null) {
+    return request(url, { method: 'GET', headers });
   },
 
-  post(url, body = '') {
+  post(url, headers = null, body = '') {
+    const finalHeaders = {};
     let contentType;
     let stringBody;
+
+    if (headers) Object.assign(finalHeaders, headers);
 
     if (body.toString() === '[object Object]') {
       contentType = 'application/json';
@@ -50,14 +53,21 @@ const httpRequest = {
       stringBody = body.toString();
     }
 
+    finalHeaders['Content-Type'] = contentType;
+    finalHeaders['Content-Length'] = Buffer.byteLength(stringBody);
+
     return request(
       url,
       {
         method: 'POST',
-        headers: { 'Content-Type': contentType, 'Content-Length': Buffer.byteLength(stringBody) },
+        headers: finalHeaders,
       },
       stringBody,
     );
+  },
+
+  delete(url, headers = null) {
+    return request(url, { method: 'DELETE', headers });
   },
 };
 
