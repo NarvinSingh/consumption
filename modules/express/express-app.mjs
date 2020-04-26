@@ -1,18 +1,8 @@
 import express from 'express';
 import connect from '../mongodb/connect.mjs';
 import Cleanup from '../cleanup.mjs';
-import observable from '../observable.mjs';
-import { curry, mix, promisify } from '../utils.mjs';
-
-function notifyObservers(app, componentType, componentName, event, data = {}) {
-  app.notifyObservers({ app, componentType, componentName, event, data });
-}
-
-function createError(app, componentType, componentName, message, data = {}) {
-  const err = new Error(message);
-  err.details = { app, componentType, componentName, data };
-  return err;
-}
+import ObservableApp from '../observable-app.mjs';
+import { promisify } from '../utils.mjs';
 
 function connectDbs(app) {
   const { cleanup } = app;
@@ -20,8 +10,8 @@ function connectDbs(app) {
   return Promise.all(app.dbSpecs.map((spec) => {
     const { host, db, username, password } = spec;
 
-    const notify = curry(notifyObservers, app, 'db', db);
-    const error = curry(createError, app, 'db', db);
+    const notify = app.makeNotifier('db', db);
+    const error = app.makeErrorCreator('db', db);
 
     notify('connecting');
     const connectResult = connect(host, db, username, password).then((client) => {
@@ -52,10 +42,10 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
     this.app = express();
   }
 
-  startServer() {
+  start() {
     if (this.server) return this;
 
-    const notify = curry(notifyObservers, this, 'server', this.name);
+    const notify = this.makeNotifier('server', this.name);
     this.cleanup = new Cleanup();
     this.cleanup.addObservers(notify);
 
@@ -72,7 +62,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
 
       const errorResult = promisify(this.server.on, this.server)('error').catch((reason) => {
         notify(reason.message, reason);
-        return this.stopServer();
+        return this.stop();
       }).finally(() => this);
 
       this.cleanup.addCallbacks(() => {
@@ -89,11 +79,11 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
       return Promise.race([listenResult, errorResult]);
     }).catch((reason) => {
       notify(reason.message, reason);
-      return this.stopServer();
+      return this.stop();
     });
   }
 
-  stopServer() {
+  stop() {
     return this.cleanup
       ? this.cleanup.runOnce('stop').then(() => {
         this.server = null;
@@ -104,18 +94,6 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
   }
 };
 
-const ExpressApp = mix(expressApp, observable);
+const ExpressApp = expressApp(ObservableApp);
 
-function summarize(msg) {
-  const { event, data } = msg;
-
-  if (data instanceof Error && data.details) {
-    const { componentType: type, componentName: name } = data.details;
-    return { type, name, event, data };
-  }
-
-  const { componentType: type, componentName: name } = msg;
-  return { type, name, event, data };
-}
-
-export { ExpressApp, summarize };
+export default ExpressApp;
