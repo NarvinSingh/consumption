@@ -1,6 +1,6 @@
 import { curry } from './utils.mjs';
 
-describe('Curry tests', () => {
+describe('curry tests', () => {
   const square = (x) => x * x;
   const add = (a, b) => a + b;
   const sum = (...ns) => ns.flat().reduce((acc, cur) => acc + cur);

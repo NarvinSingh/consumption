@@ -1,3 +1,7 @@
+function coalesce(...args) {
+  return args.find((arg) => typeof arg !== 'undefined');
+}
+
 function curry(fn, ...params) {
   return function curriedFn(...rest) {
     return fn.call(this, ...params, ...rest);
@@ -19,4 +23,4 @@ function promisify(fn, context = null) {
   };
 }
 
-export { curry, mix, promisify };
+export { coalesce, curry, mix, promisify };
