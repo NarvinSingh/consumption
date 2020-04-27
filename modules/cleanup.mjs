@@ -1,5 +1,5 @@
-import observable from './observable.mjs';
 import { mix } from './utils.mjs';
+import observable from './observable.mjs';
 
 const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
   constructor(signals = ['SIGINT', 'SIGQUIT', 'SIGTERM'], ...rest) {
