@@ -10,8 +10,8 @@ function connectDbs(app) {
   return Promise.all(app.dbSpecs.map((spec) => {
     const { host, db, username, password } = spec;
 
-    const notify = app.makeNotifier('db', db);
-    const error = app.makeErrorCreator('db', db);
+    const notify = app.makeNotifier(db);
+    const error = app.makeErrorCreator(db);
 
     notify('connecting');
     const connectResult = connect(host, db, username, password).then((client) => {
@@ -27,7 +27,7 @@ function connectDbs(app) {
       return null;
     }).then((client) => {
       if (client === undefined) notify('disconnected');
-    }).catch((reason) => { notify(reason.message, reason); }));
+    }).catch((reason) => { notify(reason); }));
 
     return connectResult;
   }));
@@ -45,7 +45,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
   start() {
     if (this.server) return this;
 
-    const notify = this.makeNotifier('server', this.name);
+    const notify = this.makeNotifier('server');
     this.cleanup = new Cleanup();
     this.cleanup.addObservers(notify);
 
@@ -70,7 +70,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
           return promisify(this.server.close, this.server)().then(() => {
             notify('closed');
           }).catch((reason) => {
-            notify(reason.message, reason);
+            notify(reason);
           });
         }
         return notify('not listening');
@@ -78,7 +78,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
 
       return Promise.race([listenResult, errorResult]);
     }).catch((reason) => {
-      notify(reason.message, reason);
+      notify(reason);
       return this.stop();
     });
   }
@@ -94,6 +94,4 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
   }
 };
 
-const ExpressApp = expressApp(ObservableApp);
-
-export default ExpressApp;
+export default expressApp(ObservableApp);

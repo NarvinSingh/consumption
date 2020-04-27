@@ -1,4 +1,3 @@
-import 'dotenv/config.js';
 import mongodb from 'mongodb';
 import ExpressApp from './express-app.mjs';
 
@@ -18,9 +17,9 @@ function makeObserver(events) {
 
 function makeLightObserver(events) {
   return (msg) => {
-    const { type, name, event } = ExpressApp.summarize(msg);
-    events.push({ type, name, event });
-    // console.log({ type, name, event });
+    const { subjectName, componentName, event } = ExpressApp.summarize(msg);
+    events.push({ subjectName, componentName, event });
+    // console.log({ subjectName, componentName, event });
   };
 }
 
@@ -51,10 +50,15 @@ describe('API server tests', () => {
     expect(app.server.listening).toBe(true);
     await app.stop(); // Stop server after second restart
     expect(app.server).toBeNull();
-    const startEvent = { type: 'server', name: 'Test', event: 'listening', data: { port: 3000 } };
+    const startEvent = {
+      subjectName: 'Test',
+      componentName: 'server',
+      event: 'listening',
+      data: { port: 3000 },
+    };
     const stopEvents = [
-      { type: 'server', name: 'Test', event: 'stop received', data: undefined },
-      { type: 'server', name: 'Test', event: 'closed', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'stop received', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'closed', data: undefined },
     ];
     const startStopEvents = [startEvent, ...stopEvents];
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
@@ -76,16 +80,16 @@ describe('API server tests', () => {
     await app.stop(); // Stop first server
     expect(app.server).toBeNull();
     expect(events).toStrictEqual([
-      { type: 'server', name: 'Test A', event: 'listening', data: { port: 3000 } },
+      { subjectName: 'Test A', componentName: 'server', event: 'listening', data: { port: 3000 } },
       {
-        type: 'server',
-        name: 'Test B',
+        subjectName: 'Test B',
+        componentName: 'server',
         event: 'listen EADDRINUSE: address already in use :::3000',
       },
-      { type: 'server', name: 'Test B', event: 'stop received' },
-      { type: 'server', name: 'Test B', event: 'not listening' },
-      { type: 'server', name: 'Test A', event: 'stop received', data: undefined },
-      { type: 'server', name: 'Test A', event: 'closed', data: undefined },
+      { subjectName: 'Test B', componentName: 'server', event: 'stop received' },
+      { subjectName: 'Test B', componentName: 'server', event: 'not listening' },
+      { subjectName: 'Test A', componentName: 'server', event: 'stop received', data: undefined },
+      { subjectName: 'Test A', componentName: 'server', event: 'closed', data: undefined },
     ]);
   });
 
@@ -116,14 +120,14 @@ describe('API server tests', () => {
     await app.stop(); // Stop server after second restart
     expect(app.server).toBeNull();
     const startEvents = [
-      { type: 'db', name: 'myDb', event: 'connecting', data: undefined },
-      { type: 'db', name: 'myDb', event: 'connected', data: undefined },
-      { type: 'server', name: 'Test', event: 'listening', data: { port: 3000 } },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connecting', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connected', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'listening', data: { port: 3000 } },
     ];
     const stopEvents = [
-      { type: 'server', name: 'Test', event: 'stop received', data: undefined },
-      { type: 'db', name: 'myDb', event: 'disconnected', data: undefined },
-      { type: 'server', name: 'Test', event: 'closed', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'stop received', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb', event: 'disconnected', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'closed', data: undefined },
     ];
     const startStopEvents = [...startEvents, ...stopEvents];
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
@@ -159,17 +163,17 @@ describe('API server tests', () => {
     await app.stop(); // Stop server after second restart
     expect(app.server).toBeNull();
     const startEvents = [
-      { type: 'db', name: 'myDb', event: 'connecting', data: undefined },
-      { type: 'db', name: 'myDb2', event: 'connecting', data: undefined },
-      { type: 'db', name: 'myDb', event: 'connected', data: undefined },
-      { type: 'db', name: 'myDb2', event: 'connected', data: undefined },
-      { type: 'server', name: 'Test', event: 'listening', data: { port: 3000 } },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connecting', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb2', event: 'connecting', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connected', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb2', event: 'connected', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'listening', data: { port: 3000 } },
     ];
     const stopEvents = [
-      { type: 'server', name: 'Test', event: 'stop received', data: undefined },
-      { type: 'db', name: 'myDb', event: 'disconnected', data: undefined },
-      { type: 'db', name: 'myDb2', event: 'disconnected', data: undefined },
-      { type: 'server', name: 'Test', event: 'closed', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'stop received', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb', event: 'disconnected', data: undefined },
+      { subjectName: 'Test', componentName: 'myDb2', event: 'disconnected', data: undefined },
+      { subjectName: 'Test', componentName: 'server', event: 'closed', data: undefined },
     ];
     const startStopEvents = [...startEvents, ...stopEvents];
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
@@ -194,12 +198,16 @@ describe('API server tests', () => {
     await app.stop(); // Stop server
     expect(app.server).toBeNull();
     const startEvents = [
-      { type: 'db', name: 'myDb', event: 'connecting' },
-      { type: 'db', name: 'myDb', event: 'URI does not have hostname, domain name and tld' },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connecting' },
+      {
+        subjectName: 'Test',
+        componentName: 'myDb',
+        event: 'URI does not have hostname, domain name and tld',
+      },
     ];
     const stopEvents = [
-      { type: 'server', name: 'Test', event: 'stop received' },
-      { type: 'db', name: 'myDb', event: 'not connected' },
+      { subjectName: 'Test', componentName: 'server', event: 'stop received' },
+      { subjectName: 'Test', componentName: 'myDb', event: 'not connected' },
     ];
     expect(events).toStrictEqual([...startEvents, ...stopEvents]);
   });
@@ -221,12 +229,12 @@ describe('API server tests', () => {
     await app.stop(); // Stop server
     expect(app.server).toBeNull();
     const startEvents = [
-      { type: 'db', name: 'myDb', event: 'connecting' },
-      { type: 'db', name: 'myDb', event: 'failed to connect' },
+      { subjectName: 'Test', componentName: 'myDb', event: 'connecting' },
+      { subjectName: 'Test', componentName: 'myDb', event: 'failed to connect' },
     ];
     const stopEvents = [
-      { type: 'server', name: 'Test', event: 'stop received' },
-      { type: 'db', name: 'myDb', event: 'not connected' },
+      { subjectName: 'Test', componentName: 'server', event: 'stop received' },
+      { subjectName: 'Test', componentName: 'myDb', event: 'not connected' },
     ];
     expect(events).toStrictEqual([...startEvents, ...stopEvents]);
   });

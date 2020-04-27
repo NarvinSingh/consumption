@@ -1,56 +1,64 @@
-import { curry, mix } from './utils.mjs';
+import { coalesce, curry, mix } from './utils.mjs';
 import observable from './observable.mjs';
 
 const observableApp = (Superclass = Object) => class ObservableApp extends Superclass {
-  createNotification(componentType, componentName, event, data) {
-    return { app: this, componentType, componentName, event, data };
+  createNotification(componentName, event, data) {
+    return {
+      subject: this,
+      subjectName: coalesce(this.name, this.constructor.name),
+      componentName,
+      event,
+      data,
+    };
   }
 
-  createError(componentType, componentName, message, data) {
+  createError(componentName, message, data) {
     const err = new Error(message);
-    err.details = this.createNotification(componentType, componentName, null, data);
+    err.details = this.createNotification(componentName, null, data);
     return err;
   }
 
-  notify(componentType, componentName, event, data) {
-    this.notifyObservers(this.createNotification(componentType, componentName, event, data));
+  notify(componentName, event, data) {
+    this.notifyObservers(this.createNotification(componentName, event, data));
   }
 
-  raise(componentType, componentName, message, data) {
-    this.notifyObservers(this.createError(componentType, componentName, message, data));
+  raise(componentName, message, data) {
+    this.notifyObservers(this.createError(componentName, message, data));
   }
 
-  makeNotificationCreator(componentType, componentName) {
-    return curry(this.createNotification, componentType, componentName).bind(this);
+  makeNotificationCreator(componentName) {
+    return curry(this.createNotification, componentName).bind(this);
   }
 
-  makeErrorCreator(componentType, componentName) {
-    return curry(this.createError, componentType, componentName).bind(this);
+  makeErrorCreator(componentName) {
+    return curry(this.createError, componentName).bind(this);
   }
 
-  makeNotifier(componentType, componentName) {
-    return curry(this.notify, componentType, componentName).bind(this);
+  makeNotifier(componentName) {
+    return curry(this.notify, componentName).bind(this);
   }
 
-  makeRaiser(componentType, componentName) {
-    return curry(this.raise, componentType, componentName).bind(this);
+  makeRaiser(componentName) {
+    return curry(this.raise, componentName).bind(this);
   }
 
   static summarize(notificaton) {
     const { event, message, data } = notificaton;
 
     if (notificaton instanceof Error && notificaton.details) {
-      const { componentType: type, componentName: name, data: detailsData } = notificaton.details;
-      return { type, name, event: message, data: detailsData };
+      const { subjectName, componentName, data: detailsData } = notificaton.details;
+      return { subjectName, componentName, event: message, data: detailsData };
     }
 
-    if (data instanceof Error && data.details) {
-      const { componentType: type, componentName: name, data: detailsData } = data.details;
-      return { type, name, event: data.message, data: detailsData };
+    const { subjectName } = notificaton;
+
+    if (event instanceof Error && event.details) {
+      const { componentName, data: detailsData } = event.details;
+      return { subjectName, componentName, event: event.message, data: detailsData };
     }
 
-    const { componentType: type, componentName: name } = notificaton;
-    return { type, name, event, data };
+    const { componentName } = notificaton;
+    return { subjectName, componentName, event, data };
   }
 };
 
