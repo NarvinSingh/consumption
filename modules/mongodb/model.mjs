@@ -11,7 +11,7 @@ const model = (Superclass = Object) => class Model extends Superclass {
   }
 
   connect() {
-    if (this.state !== 'disconnected') return this;
+    if (this.state !== 'disconnected') return Promise.resolve(this);
 
     this.state = 'connecting';
     this.notify(null, 'connecting');
