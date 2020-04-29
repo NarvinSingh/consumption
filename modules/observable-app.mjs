@@ -26,19 +26,19 @@ const observableApp = (Superclass = Object) => class ObservableApp extends Super
     this.notifyObservers(this.createError(componentName, message, data));
   }
 
-  makeNotificationCreator(componentName) {
+  makeNotificationCreator(componentName = null) {
     return curry(this.createNotification, componentName).bind(this);
   }
 
-  makeErrorCreator(componentName) {
+  makeErrorCreator(componentName = null) {
     return curry(this.createError, componentName).bind(this);
   }
 
-  makeNotifier(componentName) {
+  makeNotifier(componentName = null) {
     return curry(this.notify, componentName).bind(this);
   }
 
-  makeRaiser(componentName) {
+  makeRaiser(componentName = null) {
     return curry(this.raise, componentName).bind(this);
   }
 
