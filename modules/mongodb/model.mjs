@@ -58,6 +58,7 @@ const model = (Superclass = Object) => class Model extends Superclass {
   disconnect() {
     if (this.state === 'disconnected') return Promise.resolve(this);
 
+    this.state = 'disconnecting';
     this.notify(null, 'disconnecting');
     return this.cleanup.runOnce('disconnect').then(() => {
       this.clients = null;
