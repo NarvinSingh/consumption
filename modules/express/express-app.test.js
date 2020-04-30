@@ -1,6 +1,7 @@
 import mongodb from 'mongodb';
 import ExpressApp from './express-app.mjs';
 import Model from '../mongodb/model.mjs';
+import request from '../http-request.mjs';
 
 jest.mock('mongodb');
 const { MongoClient, MongoParseError } = mongodb;
@@ -314,6 +315,35 @@ describe('API server tests', () => {
     const stopEvents = [
       { subjectName: 'App', componentName: 'server', event: 'stopping' },
       { subjectName: 'App', componentName: 'server', event: 'stop received' },
+      { subjectName: 'App', componentName: 'server', event: 'stopped' },
+    ];
+    expect(events).toStrictEqual([...startEvents, ...stopEvents]);
+  });
+
+  test('Can\'t make a request if server is not started', async () => {
+    expect.assertions(3);
+
+    const events = [];
+    const app = new ExpressApp('App', 3000);
+
+    app.addObservers(makeLightObserver(events));
+    await app.start();
+    app.state = 'starting'; // fake the app not being started
+    const result = await request.get('http://localhost:3000');
+    expect(result.statusCode).toBe(500);
+    await app.stop();
+    expect(app.state).toBe('stopped');
+    const startEvents = [
+      { subjectName: 'App', componentName: 'server', event: 'starting' },
+      { subjectName: 'App', componentName: 'server', event: 'listening' },
+      { subjectName: 'App', componentName: 'server', event: 'started' },
+      { subjectName: 'App', componentName: 'server', event: 'not started' },
+    ];
+    const stopEvents = [
+      { subjectName: 'App', componentName: 'server', event: 'stopping' },
+      { subjectName: 'App', componentName: 'server', event: 'stop received' },
+      { subjectName: 'App', componentName: 'server', event: 'closing' },
+      { subjectName: 'App', componentName: 'server', event: 'closed' },
       { subjectName: 'App', componentName: 'server', event: 'stopped' },
     ];
     expect(events).toStrictEqual([...startEvents, ...stopEvents]);
