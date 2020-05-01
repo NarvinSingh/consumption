@@ -30,12 +30,13 @@ describe('Model tests', () => {
   });
 
   test('Start and stop a model with a single database connection', async () => {
-    expect.assertions(16);
+    expect.assertions(20);
     MongoClient.prototype.isConnected.mockReturnValue(true);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const model = new Model(
       'Model',
-      [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+      [{ host: 'db-host', db: 'myDb', cols: ['c1', 'c2'], username: 'user', password: 'password' }],
     );
     const events = [];
     model.addObservers(makeObserver(events));
@@ -44,6 +45,10 @@ describe('Model tests', () => {
     const result = await model.connect(); // connect the model
     expect(result).toBe(model);
     expect(model.state).toBe('connected');
+    expect(model.dbs).toBeInstanceOf(Object);
+    expect(model.dbs.myDb).toBeInstanceOf(Object);
+    expect(model.dbs.myDb.c1).toBeInstanceOf(Object);
+    expect(model.dbs.myDb.c2).toBeInstanceOf(Object);
     await model.disconnect(); // disconnect the model
     expect(model).toBe(model);
     expect(model.state).toBe('disconnected');
@@ -80,14 +85,15 @@ describe('Model tests', () => {
   });
 
   test('Start and stop a model with a multiple database connections', async () => {
-    expect.assertions(16);
+    expect.assertions(22);
     MongoClient.prototype.isConnected.mockReturnValue(true);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const model = new Model(
       'Model',
       [
-        { host: 'db-host', db: 'myDb', username: 'user', password: 'password' },
-        { host: 'db-host-2', db: 'myDb2', username: 'user', password: 'password' },
+        { host: 'db-host', db: 'myDb', cols: ['c1', 'c2'], username: 'user', password: 'password' },
+        { host: 'db-host-2', db: 'myDb2', cols: ['c3'], username: 'user', password: 'password' },
       ],
     );
     const events = [];
@@ -97,6 +103,12 @@ describe('Model tests', () => {
     const result = await model.connect(); // connect the model
     expect(result).toBe(model);
     expect(model.state).toBe('connected');
+    expect(model.dbs).toBeInstanceOf(Object);
+    expect(model.dbs.myDb).toBeInstanceOf(Object);
+    expect(model.dbs.myDb.c1).toBeInstanceOf(Object);
+    expect(model.dbs.myDb.c2).toBeInstanceOf(Object);
+    expect(model.dbs.myDb2).toBeInstanceOf(Object);
+    expect(model.dbs.myDb2.c3).toBeInstanceOf(Object);
     await model.disconnect(); // disconnect the model
     expect(model).toBe(model);
     expect(model.state).toBe('disconnected');
@@ -144,7 +156,7 @@ describe('Model tests', () => {
 
     const model = new Model(
       'Model',
-      [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+      [{ host: 'db-host', db: 'myDb', cols: [], username: 'user', password: 'password' }],
     );
     const events = [];
     model.addObservers(makeLightObserver(events));
@@ -174,12 +186,13 @@ describe('Model tests', () => {
     reason.message = 'URI does not have hostname, domain name and tld';
     MongoClient.prototype.connect.mockRejectedValueOnce(reason);
     MongoClient.prototype.isConnected.mockReturnValue(true);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const model = new Model(
       'Model',
       [
-        { host: 'db-host', db: 'myDb', username: 'user', password: 'password' },
-        { host: 'db-host-2', db: 'myDb2', username: 'user', password: 'password' },
+        { host: 'db-host', db: 'myDb', cols: [], username: 'user', password: 'password' },
+        { host: 'db-host-2', db: 'myDb2', cols: [], username: 'user', password: 'password' },
       ],
     );
     const events = [];
@@ -214,7 +227,7 @@ describe('Model tests', () => {
 
     const model = new Model(
       'Model',
-      [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+      [{ host: 'db-host', db: 'myDb', cols: [], username: 'user', password: 'password' }],
     );
     const events = [];
     model.addObservers(makeLightObserver(events));
@@ -238,12 +251,13 @@ describe('Model tests', () => {
     expect.assertions(3);
     MongoClient.prototype.isConnected.mockReturnValue(true);
     MongoClient.prototype.isConnected.mockReturnValueOnce(false);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const model = new Model(
       'Model',
       [
-        { host: 'db-host', db: 'myDb', username: 'user', password: 'password' },
-        { host: 'db-host-2', db: 'myDb2', username: 'user', password: 'password' },
+        { host: 'db-host', db: 'myDb', cols: [], username: 'user', password: 'password' },
+        { host: 'db-host-2', db: 'myDb2', cols: [], username: 'user', password: 'password' },
       ],
     );
     const events = [];
@@ -265,7 +279,6 @@ describe('Model tests', () => {
       { subjectName: 'Model', componentName: 'myDb2', event: 'disconnected' },
       { subjectName: 'Model', componentName: null, event: 'disconnected' },
     ];
-    console.log('events', events);
     expect(events).toStrictEqual(startEvents);
   });
 });

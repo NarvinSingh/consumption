@@ -1,6 +1,7 @@
 import Cleanup from '../cleanup.mjs';
 import ObservableApp from '../observable-app.mjs';
 import connect from './connect.mjs';
+import makeModelCollection from './model-collection.mjs';
 
 const model = (Superclass = Object) => class Model extends Superclass {
   constructor(name, dbSpecs, ...superArgs) {
@@ -15,20 +16,24 @@ const model = (Superclass = Object) => class Model extends Superclass {
 
     this.state = 'connecting';
     this.notify(null, 'connecting');
-    this.clients = {};
+    this.dbs = {};
     this.cleanup = new Cleanup();
     this.cleanup.addObservers((signal) => { this.notify(null, signal); });
 
     return Promise.all(this.dbSpecs.map((spec) => {
-      const { host, db, username, password } = spec;
-      const dbNotify = this.makeNotifier(db);
-      const error = this.makeErrorCreator(db);
+      const { host, db: dbName, cols: colNames, username, password } = spec;
+      const dbNotify = this.makeNotifier(dbName);
+      const error = this.makeErrorCreator(dbName);
 
       dbNotify('connecting');
-      const connectResult = connect(host, db, username, password).then((client) => {
+      const connectResult = connect(host, dbName, username, password).then((client) => {
         if (!client.isConnected()) throw error('failed to connect');
         dbNotify('connected');
-        this.clients[db] = client;
+        const dbProp = {};
+        this.dbs[dbName] = dbProp;
+        colNames.forEach((colName) => {
+          dbProp[colName] = makeModelCollection(client.db(dbName).collection(colName));
+        });
         return client;
       }).catch((reason) => { throw error(reason.message, reason); });
 
@@ -61,7 +66,7 @@ const model = (Superclass = Object) => class Model extends Superclass {
     this.state = 'disconnecting';
     this.notify(null, 'disconnecting');
     return this.cleanup.runOnce('disconnect').then(() => {
-      this.clients = null;
+      this.dbs = null;
       this.cleanup = null;
       this.state = 'disconnected';
       this.notify(null, 'disconnected');
