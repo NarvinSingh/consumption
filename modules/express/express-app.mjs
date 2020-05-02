@@ -1,6 +1,6 @@
 import express from 'express';
 import Cleanup from '../cleanup.mjs';
-import ObservableApp from '../observable-app.mjs';
+import { makeObservableApp } from '../observable-app.mjs';
 import { promisify } from '../utils.mjs';
 
 const expressApp = (Superclass = Object) => class ExpressApp extends Superclass {
@@ -9,9 +9,8 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
     this.name = name;
     this.port = port;
     this.models = models;
-    this.app = express();
-    this.state = 'stopped';
     models.forEach((model) => { model.addObservers((data) => this.notifyObservers(data)); });
+    this.app = express();
     this.app.use((req, res, next) => {
       if (this.state !== 'started') {
         this.notify('server', 'not started', req);
@@ -19,6 +18,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
       }
       return next();
     });
+    this.state = 'stopped';
   }
 
   start() {
@@ -85,4 +85,8 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
   }
 };
 
-export default expressApp(ObservableApp);
+export function makeExpressApp(base = Object) {
+  return expressApp(makeObservableApp(base));
+}
+
+export default makeExpressApp();

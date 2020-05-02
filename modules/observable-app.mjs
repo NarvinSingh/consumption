@@ -62,4 +62,8 @@ const observableApp = (Superclass = Object) => class ObservableApp extends Super
   }
 };
 
-export default mix(observableApp, observable);
+export function makeObservableApp(base = Object) {
+  return mix(base, observable, observableApp);
+}
+
+export default makeObservableApp();

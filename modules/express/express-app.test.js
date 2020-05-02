@@ -13,7 +13,7 @@ function makeObserver(events) {
   return (msg) => {
     const payload = ExpressApp.summarize(msg);
     events.push(payload);
-    // console.log(payload);
+    console.log(payload);
   };
 }
 
@@ -108,6 +108,7 @@ describe('API server tests', () => {
   test('Start and stop server with a model', async () => {
     expect.assertions(8);
     MongoClient.prototype.isConnected.mockReturnValue(true);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
     const app = new ExpressApp(
@@ -116,7 +117,7 @@ describe('API server tests', () => {
       [
         new Model(
           'Model',
-          [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+          [{ host: 'db-host', db: 'myDb', cols: ['c1'], username: 'user', password: 'password' }],
         ),
       ],
     );
@@ -164,6 +165,7 @@ describe('API server tests', () => {
   test('Start and stop server with multiple models', async () => {
     expect.assertions(8);
     MongoClient.prototype.isConnected.mockReturnValue(true);
+    MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
     const app = new ExpressApp(
@@ -172,11 +174,11 @@ describe('API server tests', () => {
       [
         new Model(
           'Model A',
-          [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+          [{ host: 'db-host', db: 'myDb', cols: ['c1'], username: 'user', password: 'password' }],
         ),
         new Model(
           'Model B',
-          [{ host: 'db-host-2', db: 'myDb2', username: 'user', password: 'password' }],
+          [{ host: 'db-host-2', db: 'myDb2', cols: ['c2'], username: 'user', password: 'password' }],
         ),
       ],
     );
@@ -253,7 +255,7 @@ describe('API server tests', () => {
       [
         new Model(
           'Model',
-          [{ host: 'notahost', db: 'myDb', username: 'user', password: 'password' }],
+          [{ host: 'notahost', db: 'myDb', cols: ['c1'], username: 'user', password: 'password' }],
         ),
       ],
     );
@@ -294,7 +296,7 @@ describe('API server tests', () => {
       [
         new Model(
           'Model',
-          [{ host: 'db-host', db: 'myDb', username: 'user', password: 'password' }],
+          [{ host: 'db-host', db: 'myDb', cols: ['c1'], username: 'user', password: 'password' }],
         ),
       ],
     );

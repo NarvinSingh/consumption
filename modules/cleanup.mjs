@@ -33,4 +33,8 @@ const cleanup = (Superclass = Object) => class Cleanup extends Superclass {
   }
 };
 
-export default mix(cleanup, observable);
+export function makeCleanup(base = Object) {
+  return mix(base, observable, cleanup);
+}
+
+export default makeCleanup();

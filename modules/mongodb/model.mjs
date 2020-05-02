@@ -1,5 +1,5 @@
 import Cleanup from '../cleanup.mjs';
-import ObservableApp from '../observable-app.mjs';
+import { makeObservableApp } from '../observable-app.mjs';
 import connect from './connect.mjs';
 import makeModelCollection from './model-collection.mjs';
 
@@ -75,4 +75,8 @@ const model = (Superclass = Object) => class Model extends Superclass {
   }
 };
 
-export default model(ObservableApp);
+export function makeModel(base = Object) {
+  return model(makeObservableApp(base));
+}
+
+export default makeModel();
