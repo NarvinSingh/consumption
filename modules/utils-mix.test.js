@@ -56,12 +56,42 @@ const energyAmount = 12;
 const poopAmount = 0.1;
 
 describe.each([
-  ['speaker -> eater -> pooper', mix(speaker, eater, pooper), [sound, energy, energyEfficiency]],
-  ['eater -> speaker -> pooper', mix(eater, speaker, pooper), [energy, energyEfficiency, sound]],
-  ['eater -> pooper -> speaker', mix(eater, pooper, speaker), [energy, energyEfficiency, sound]],
-  ['pooper -> speaker -> eater', mix(pooper, speaker, eater), [sound, energy, energyEfficiency]],
-  ['pooper -> eater -> speaker', mix(pooper, eater, speaker), [energy, energyEfficiency, sound]],
+  [
+    'Pooper -> Eater -> Speaker',
+    mix(Object, speaker, eater, pooper),
+    [energy, energyEfficiency, sound],
+  ],
+  [
+    'Pooper -> Speaker -> Eater',
+    mix(Object, eater, speaker, pooper),
+    [sound, energy, energyEfficiency],
+  ],
+  [
+    'Speaker -> Pooper -> Eater',
+    mix(Object, eater, pooper, speaker),
+    [sound, energy, energyEfficiency],
+  ],
+  [
+    'Eater -> Speaker -> Pooper',
+    mix(Object, pooper, speaker, eater),
+    [energy, energyEfficiency, sound],
+  ],
+  [
+    'Speaker -> Eater -> Pooper',
+    mix(Object, pooper, eater, speaker),
+    [sound, energy, energyEfficiency],
+  ],
 ])('Mixin %s tests', (name, Cat, args) => {
+  test('Prototype chain is correct', () => {
+    const cat = new Cat(...args);
+    const prototypes = [...Array(4)]
+      .map((item, index) => [...Array(index + 1)]
+        .reduce((acc) => Object.getPrototypeOf(acc), cat).constructor.name)
+      .join(' -> ');
+
+    expect(prototypes).toBe(`${name} -> Object`);
+  });
+
   test.each([
     ['sound'],
     ['energy'],
@@ -115,11 +145,21 @@ describe.each([
 });
 
 describe('Mixin StaticMixin1 -> StaticMixin2 tests', () => {
+  test('Prototype chain is correct', () => {
+    const StaticMixin12 = mix(Object, staticMixin1, staticMixin2);
+    const prototypes = [...Array(2)]
+      .map((item, index) => [...Array(index + 1)]
+        .reduce((acc) => Object.getPrototypeOf(acc), StaticMixin12).name)
+      .join(' -> ');
+
+    expect(`${StaticMixin12.name} -> ${prototypes}`).toBe('StaticMixin2 -> StaticMixin1 -> Object');
+  });
+
   test.each([
     ['getStaticThing1'],
     ['getStaticThing2'],
   ])('Has the static method %s', (method) => {
-    const StaticMixin12 = mix(staticMixin1, staticMixin2);
+    const StaticMixin12 = mix(Object, staticMixin1, staticMixin2);
 
     expect(StaticMixin12[method]).toBeInstanceOf(Function);
   });
@@ -128,8 +168,8 @@ describe('Mixin StaticMixin1 -> StaticMixin2 tests', () => {
     ['getStaticThing1'],
     ['getStaticThing2'],
   ])('Has the not shared static method %s', (method) => {
-    const StaticMixin12a = mix(staticMixin1, staticMixin2);
-    const StaticMixin12b = mix(staticMixin1, staticMixin2);
+    const StaticMixin12a = mix(Object, staticMixin1, staticMixin2);
+    const StaticMixin12b = mix(Object, staticMixin1, staticMixin2);
 
     expect(StaticMixin12a[method]).toBeInstanceOf(Function);
     expect(StaticMixin12b[method]).toBeInstanceOf(Function);
@@ -140,17 +180,26 @@ describe('Mixin StaticMixin1 -> StaticMixin2 tests', () => {
     ['getStaticThing1', 'StaticMixin1 thing'],
     ['getStaticThing2', 'StaticMixin2 thing'],
   ])('Static method %s gets correct value', (method, expectedValue) => {
-    const StaticMixin12 = mix(staticMixin1, staticMixin2);
+    const StaticMixin12 = mix(Object, staticMixin1, staticMixin2);
 
     expect(StaticMixin12[method]()).toBe(expectedValue);
   });
 });
 
 describe.each([
-  ['StaticMixin1 -> StaticMixin2 -> speaker', mix(staticMixin1, staticMixin2, speaker)],
-  ['StaticMixin1 -> speaker -> StaticMixin2', mix(staticMixin1, speaker, staticMixin2)],
-  ['speaker -> StaticMixin1 -> StaticMixin2', mix(speaker, staticMixin1, staticMixin2)],
+  ['Speaker -> StaticMixin2 -> StaticMixin1', mix(Object, staticMixin1, staticMixin2, speaker)],
+  ['StaticMixin2 -> Speaker -> StaticMixin1', mix(Object, staticMixin1, speaker, staticMixin2)],
+  ['StaticMixin2 -> StaticMixin1 -> Speaker', mix(Object, speaker, staticMixin1, staticMixin2)],
 ])('Mixin %s tests', (name, Mixin) => {
+  test('Prototype chain is correct', () => {
+    const prototypes = [...Array(3)]
+      .map((item, index) => [...Array(index + 1)]
+        .reduce((acc) => Object.getPrototypeOf(acc), Mixin).name)
+      .join(' -> ');
+
+    expect(`${Mixin.name} -> ${prototypes}`).toBe(`${name} -> Object`);
+  });
+
   test.each([
     ['getStaticThing1'],
     ['getStaticThing2'],

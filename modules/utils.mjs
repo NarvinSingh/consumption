@@ -8,8 +8,8 @@ function curry(fn, ...params) {
   };
 }
 
-function mix(...mixins) {
-  return mixins.reduceRight((Class, createMixin) => createMixin(Class), Object);
+function mix(Base, ...mixins) {
+  return mixins.reduce((Class, createMixin) => createMixin(Class), Base);
 }
 
 function promisify(fn, context = null) {
