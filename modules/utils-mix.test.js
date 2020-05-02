@@ -81,6 +81,11 @@ describe.each([
     mix(Object, pooper, eater, speaker),
     [sound, energy, energyEfficiency],
   ],
+  [
+    'Pooper -> Eater -> Speaker',
+    mix({}, speaker, eater, pooper),
+    [energy, energyEfficiency, sound],
+  ],
 ])('Mixin %s tests', (name, Cat, args) => {
   test('Prototype chain is correct', () => {
     const cat = new Cat(...args);

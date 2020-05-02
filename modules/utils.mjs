@@ -8,8 +8,15 @@ function curry(fn, ...params) {
   };
 }
 
-function mix(Base, ...mixins) {
-  return mixins.reduce((Class, createMixin) => createMixin(Class), Base);
+function mix(base, ...mixins) {
+  let BaseClass;
+  if (typeof base === 'function') BaseClass = base;
+  else {
+    BaseClass = function F() {};
+    BaseClass.prototype = base;
+  }
+
+  return mixins.reduce((Class, createMixin) => createMixin(Class), BaseClass);
 }
 
 function promisify(fn, context = null) {
