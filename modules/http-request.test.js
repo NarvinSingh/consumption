@@ -170,6 +170,85 @@ describe('http-request tests', () => {
     });
   });
 
+  test('PUT', async () => {
+    expect.assertions(1);
+
+    const result = await request.put(`http://localhost:${port}/users`);
+    const body = JSON.parse(result.body);
+
+    expect(body).toStrictEqual({
+      method: 'PUT',
+      url: '/users',
+      headers: {
+        host: `localhost:${port}`,
+        'content-length': '0',
+        'content-type': 'text/plain',
+        connection: 'close',
+      },
+      body: '',
+    });
+  });
+
+  test('PUT with a param', async () => {
+    expect.assertions(1);
+
+    const result = await request.put(`http://localhost:${port}/users/123`);
+    const body = JSON.parse(result.body);
+
+    expect(body).toStrictEqual({
+      method: 'PUT',
+      url: '/users/123',
+      headers: {
+        host: `localhost:${port}`,
+        'content-length': '0',
+        'content-type': 'text/plain',
+        connection: 'close',
+      },
+      body: '',
+    });
+  });
+
+  test('PUT with an additional header', async () => {
+    expect.assertions(1);
+
+    const result = await request.put(`http://localhost:${port}/users`, { 'test-header': 1 });
+    const body = JSON.parse(result.body);
+
+    expect(body).toStrictEqual({
+      method: 'PUT',
+      url: '/users',
+      headers: {
+        host: `localhost:${port}`,
+        'content-length': '0',
+        'content-type': 'text/plain',
+        'test-header': '1',
+        connection: 'close',
+      },
+      body: '',
+    });
+  });
+
+  test('PUT with a body', async () => {
+    expect.assertions(1);
+
+    const reqBody = { a: 1 };
+    const reqStringBody = JSON.stringify(reqBody);
+    const result = await request.put(`http://localhost:${port}/users`, null, reqBody);
+    const body = JSON.parse(result.body);
+
+    expect(body).toStrictEqual({
+      method: 'PUT',
+      url: '/users',
+      headers: {
+        host: `localhost:${port}`,
+        'content-length': reqStringBody.length.toString(),
+        'content-type': 'application/json',
+        connection: 'close',
+      },
+      body: reqStringBody,
+    });
+  });
+
   test('DELETE', async () => {
     expect.assertions(1);
 

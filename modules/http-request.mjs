@@ -25,12 +25,33 @@ function request(url, options, reqBody = '') {
       reject(err);
     });
 
-    if (options.method === 'POST') {
+    if (options.method === 'POST' || options.method === 'PUT') {
       req.write(reqBody);
     }
 
     req.end();
   });
+}
+
+function prepareBodyAndHeaders(headers = null, body = '') {
+  const finalHeaders = {};
+  let contentType;
+  let stringBody;
+
+  if (headers) Object.assign(finalHeaders, headers);
+
+  if (body.toString() === '[object Object]') {
+    contentType = 'application/json';
+    stringBody = JSON.stringify(body);
+  } else {
+    contentType = 'text/plain';
+    stringBody = body.toString();
+  }
+
+  finalHeaders['Content-Type'] = contentType;
+  finalHeaders['Content-Length'] = Buffer.byteLength(stringBody);
+
+  return { stringBody, finalHeaders };
 }
 
 const httpRequest = {
@@ -39,31 +60,13 @@ const httpRequest = {
   },
 
   post(url, headers = null, body = '') {
-    const finalHeaders = {};
-    let contentType;
-    let stringBody;
+    const { stringBody, finalHeaders } = prepareBodyAndHeaders(headers, body);
+    return request(url, { method: 'POST', headers: finalHeaders }, stringBody);
+  },
 
-    if (headers) Object.assign(finalHeaders, headers);
-
-    if (body.toString() === '[object Object]') {
-      contentType = 'application/json';
-      stringBody = JSON.stringify(body);
-    } else {
-      contentType = 'text/plain';
-      stringBody = body.toString();
-    }
-
-    finalHeaders['Content-Type'] = contentType;
-    finalHeaders['Content-Length'] = Buffer.byteLength(stringBody);
-
-    return request(
-      url,
-      {
-        method: 'POST',
-        headers: finalHeaders,
-      },
-      stringBody,
-    );
+  put(url, headers = null, body = '') {
+    const { stringBody, finalHeaders } = prepareBodyAndHeaders(headers, body);
+    return request(url, { method: 'PUT', headers: finalHeaders }, stringBody);
   },
 
   delete(url, headers = null) {
