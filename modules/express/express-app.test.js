@@ -1,5 +1,5 @@
 import mongodb from 'mongodb';
-import ExpressApp from './express-app.mjs';
+import makeExpressApp from './express-app.mjs';
 import Model from '../mongodb/model.mjs';
 import request from '../http-request.mjs';
 
@@ -9,17 +9,19 @@ MongoClient.prototype.connect.mockImplementation(function mockConnect() {
   return Promise.resolve(this);
 });
 
+const { summarize } = makeExpressApp().constructor;
+
 function makeObserver(events) {
   return (msg) => {
-    const payload = ExpressApp.summarize(msg);
+    const payload = summarize(msg);
     events.push(payload);
-    console.log(payload);
+    // console.log(payload);
   };
 }
 
 function makeLightObserver(events) {
   return (msg) => {
-    const { subjectName, componentName, event } = ExpressApp.summarize(msg);
+    const { subjectName, componentName, event } = summarize(msg);
     events.push({ subjectName, componentName, event });
     // console.log({ subjectName, componentName, event });
   };
@@ -35,7 +37,7 @@ describe('API server tests', () => {
     expect.assertions(8);
 
     const events = [];
-    const app = new ExpressApp('App', 3000);
+    const app = makeExpressApp('App', 3000);
 
     app.addObservers(makeObserver(events));
     await app.start(); // Start server
@@ -68,50 +70,13 @@ describe('API server tests', () => {
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
   });
 
-  test('Server can\'t listen on a port in use', async () => {
-    expect.assertions(4);
-
-    const events = [];
-    const app = new ExpressApp('App A', 3000);
-    const app2 = new ExpressApp('App B', 3000);
-
-    app.addObservers(makeObserver(events));
-    app2.addObservers(makeLightObserver(events));
-    await app.start(); // Start first server
-    expect(app.server.listening).toBe(true);
-    await app2.start(); // Try to start second server on the same port
-    expect(app2.state).toBe('stopped');
-    await app.stop(); // Stop first server
-    expect(app.state).toBe('stopped');
-    expect(events).toStrictEqual([
-      { subjectName: 'App A', componentName: 'server', event: 'starting', data: undefined },
-      { subjectName: 'App A', componentName: 'server', event: 'listening', data: { port: 3000 } },
-      { subjectName: 'App A', componentName: 'server', event: 'started', data: undefined },
-      { subjectName: 'App B', componentName: 'server', event: 'starting' },
-      {
-        subjectName: 'App B',
-        componentName: 'server',
-        event: 'listen EADDRINUSE: address already in use :::3000',
-      },
-      { subjectName: 'App B', componentName: 'server', event: 'stopping' },
-      { subjectName: 'App B', componentName: 'server', event: 'stop received' },
-      { subjectName: 'App B', componentName: 'server', event: 'not listening' },
-      { subjectName: 'App B', componentName: 'server', event: 'stopped' },
-      { subjectName: 'App A', componentName: 'server', event: 'stopping', data: undefined },
-      { subjectName: 'App A', componentName: 'server', event: 'stop received', data: undefined },
-      { subjectName: 'App A', componentName: 'server', event: 'closing', data: undefined },
-      { subjectName: 'App A', componentName: 'server', event: 'closed', data: undefined },
-      { subjectName: 'App A', componentName: 'server', event: 'stopped', data: undefined },
-    ]);
-  });
-
   test('Start and stop server with a model', async () => {
     expect.assertions(8);
     MongoClient.prototype.isConnected.mockReturnValue(true);
     MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
-    const app = new ExpressApp(
+    const app = makeExpressApp(
       'App',
       3000,
       [
@@ -168,7 +133,7 @@ describe('API server tests', () => {
     MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
-    const app = new ExpressApp(
+    const app = makeExpressApp(
       'App',
       3000,
       [
@@ -242,6 +207,86 @@ describe('API server tests', () => {
     expect(events).toStrictEqual([...startStopEvents, ...startStopEvents, ...startStopEvents]);
   });
 
+  test('Can create routes and make requests', async () => {
+    expect.assertions(10);
+
+    const events = [];
+    const app = makeExpressApp('App', 3000);
+
+    app.addObservers(makeLightObserver(events));
+    app.get('/', (req, res) => res.send('GET response'));
+    app.post('/', (req, res) => res.send('POST response'));
+    app.put('/', (req, res) => res.send('PUT response'));
+    app.delete('/', (req, res) => res.send('DELETE response'));
+    await app.start();
+    const results = await Promise.all([
+      request.get('http://localhost:3000'),
+      request.post('http://localhost:3000'),
+      request.put('http://localhost:3000'),
+      request.delete('http://localhost:3000'),
+    ]);
+    expect(results[0].statusCode).toBe(200);
+    expect(results[1].statusCode).toBe(200);
+    expect(results[2].statusCode).toBe(200);
+    expect(results[3].statusCode).toBe(200);
+    expect(results[0].body).toBe('GET response');
+    expect(results[1].body).toBe('POST response');
+    expect(results[2].body).toBe('PUT response');
+    expect(results[3].body).toBe('DELETE response');
+    await app.stop();
+    expect(app.state).toBe('stopped');
+    const startEvents = [
+      { subjectName: 'App', componentName: 'server', event: 'starting' },
+      { subjectName: 'App', componentName: 'server', event: 'listening' },
+      { subjectName: 'App', componentName: 'server', event: 'started' },
+    ];
+    const stopEvents = [
+      { subjectName: 'App', componentName: 'server', event: 'stopping' },
+      { subjectName: 'App', componentName: 'server', event: 'stop received' },
+      { subjectName: 'App', componentName: 'server', event: 'closing' },
+      { subjectName: 'App', componentName: 'server', event: 'closed' },
+      { subjectName: 'App', componentName: 'server', event: 'stopped' },
+    ];
+    expect(events).toStrictEqual([...startEvents, ...stopEvents]);
+  });
+
+  test('Can\'t listen on a port in use', async () => {
+    expect.assertions(4);
+
+    const events = [];
+    const app = makeExpressApp('App A', 3000);
+    const app2 = makeExpressApp('App B', 3000);
+
+    app.addObservers(makeObserver(events));
+    app2.addObservers(makeLightObserver(events));
+    await app.start(); // Start first server
+    expect(app.server.listening).toBe(true);
+    await app2.start(); // Try to start second server on the same port
+    expect(app2.state).toBe('stopped');
+    await app.stop(); // Stop first server
+    expect(app.state).toBe('stopped');
+    expect(events).toStrictEqual([
+      { subjectName: 'App A', componentName: 'server', event: 'starting', data: undefined },
+      { subjectName: 'App A', componentName: 'server', event: 'listening', data: { port: 3000 } },
+      { subjectName: 'App A', componentName: 'server', event: 'started', data: undefined },
+      { subjectName: 'App B', componentName: 'server', event: 'starting' },
+      {
+        subjectName: 'App B',
+        componentName: 'server',
+        event: 'listen EADDRINUSE: address already in use :::3000',
+      },
+      { subjectName: 'App B', componentName: 'server', event: 'stopping' },
+      { subjectName: 'App B', componentName: 'server', event: 'stop received' },
+      { subjectName: 'App B', componentName: 'server', event: 'not listening' },
+      { subjectName: 'App B', componentName: 'server', event: 'stopped' },
+      { subjectName: 'App A', componentName: 'server', event: 'stopping', data: undefined },
+      { subjectName: 'App A', componentName: 'server', event: 'stop received', data: undefined },
+      { subjectName: 'App A', componentName: 'server', event: 'closing', data: undefined },
+      { subjectName: 'App A', componentName: 'server', event: 'closed', data: undefined },
+      { subjectName: 'App A', componentName: 'server', event: 'stopped', data: undefined },
+    ]);
+  });
+
   test('Can\'t start the server if the model database host is invalid', async () => {
     expect.assertions(2);
     const reason = new MongoParseError();
@@ -249,7 +294,7 @@ describe('API server tests', () => {
     MongoClient.prototype.connect.mockRejectedValueOnce(reason);
 
     const events = [];
-    const app = new ExpressApp(
+    const app = makeExpressApp(
       'App',
       3000,
       [
@@ -290,7 +335,7 @@ describe('API server tests', () => {
     MongoClient.prototype.isConnected.mockReturnValueOnce(false);
 
     const events = [];
-    const app = new ExpressApp(
+    const app = makeExpressApp(
       'App',
       3000,
       [
@@ -326,7 +371,7 @@ describe('API server tests', () => {
     expect.assertions(3);
 
     const events = [];
-    const app = new ExpressApp('App', 3000);
+    const app = makeExpressApp('App', 3000);
 
     app.addObservers(makeLightObserver(events));
     await app.start();
