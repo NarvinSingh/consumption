@@ -5,7 +5,7 @@ const observableApp = (Superclass = Object) => class ObservableApp extends Super
   createNotification(componentName, event, data) {
     return {
       subject: this,
-      subjectName: coalesce(this.name, this.constructor.name),
+      subjectName: coalesce(this.subjectName, this.name, this.constructor.name),
       componentName,
       event,
       data,

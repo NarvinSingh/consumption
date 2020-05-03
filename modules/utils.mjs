@@ -11,6 +11,8 @@ function curry(fn, ...params) {
 function mix(base, ...mixins) {
   let BaseClass;
   if (typeof base === 'function') BaseClass = base;
+  // We can only extend a constructible function, so to insert a base object into the prototype
+  // chain, we make a function with the base as its prototype property then extend that function
   else {
     BaseClass = function F() {};
     BaseClass.prototype = base;
