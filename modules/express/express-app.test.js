@@ -1,5 +1,5 @@
 import mongodb from 'mongodb';
-import makeExpressApp from './express-app.mjs';
+import ExpressApp from './express-app.mjs';
 import Model from '../mongodb/model.mjs';
 import request from '../http-request.mjs';
 
@@ -9,7 +9,7 @@ MongoClient.prototype.connect.mockImplementation(function mockConnect() {
   return Promise.resolve(this);
 });
 
-const { summarize } = makeExpressApp().constructor;
+const { summarize } = ExpressApp;
 
 function makeObserver(events) {
   return (msg) => {
@@ -37,7 +37,7 @@ describe('API server tests', () => {
     expect.assertions(8);
 
     const events = [];
-    const app = makeExpressApp('App', 3000);
+    const app = new ExpressApp('App', 3000);
 
     app.addObservers(makeObserver(events));
     await app.start(); // Start server
@@ -76,7 +76,7 @@ describe('API server tests', () => {
     MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
-    const app = makeExpressApp(
+    const app = new ExpressApp(
       'App',
       3000,
       [
@@ -133,7 +133,7 @@ describe('API server tests', () => {
     MongoClient.prototype.db.mockReturnValue({ collection: () => ({}) });
 
     const events = [];
-    const app = makeExpressApp(
+    const app = new ExpressApp(
       'App',
       3000,
       [
@@ -211,14 +211,15 @@ describe('API server tests', () => {
     expect.assertions(10);
 
     const events = [];
-    const app = makeExpressApp('App', 3000);
+    const expressApp = new ExpressApp('App', 3000);
+    const { app } = expressApp;
 
-    app.addObservers(makeLightObserver(events));
+    expressApp.addObservers(makeLightObserver(events));
     app.get('/', (req, res) => res.send('GET response'));
     app.post('/', (req, res) => res.send('POST response'));
     app.put('/', (req, res) => res.send('PUT response'));
     app.delete('/', (req, res) => res.send('DELETE response'));
-    await app.start();
+    await expressApp.start();
     const results = await Promise.all([
       request.get('http://localhost:3000'),
       request.post('http://localhost:3000'),
@@ -233,8 +234,8 @@ describe('API server tests', () => {
     expect(results[1].body).toBe('POST response');
     expect(results[2].body).toBe('PUT response');
     expect(results[3].body).toBe('DELETE response');
-    await app.stop();
-    expect(app.state).toBe('stopped');
+    await expressApp.stop();
+    expect(expressApp.state).toBe('stopped');
     const startEvents = [
       { subjectName: 'App', componentName: 'server', event: 'starting' },
       { subjectName: 'App', componentName: 'server', event: 'listening' },
@@ -254,8 +255,8 @@ describe('API server tests', () => {
     expect.assertions(4);
 
     const events = [];
-    const app = makeExpressApp('App A', 3000);
-    const app2 = makeExpressApp('App B', 3000);
+    const app = new ExpressApp('App A', 3000);
+    const app2 = new ExpressApp('App B', 3000);
 
     app.addObservers(makeObserver(events));
     app2.addObservers(makeLightObserver(events));
@@ -294,7 +295,7 @@ describe('API server tests', () => {
     MongoClient.prototype.connect.mockRejectedValueOnce(reason);
 
     const events = [];
-    const app = makeExpressApp(
+    const app = new ExpressApp(
       'App',
       3000,
       [
@@ -335,7 +336,7 @@ describe('API server tests', () => {
     MongoClient.prototype.isConnected.mockReturnValueOnce(false);
 
     const events = [];
-    const app = makeExpressApp(
+    const app = new ExpressApp(
       'App',
       3000,
       [
@@ -371,7 +372,7 @@ describe('API server tests', () => {
     expect.assertions(3);
 
     const events = [];
-    const app = makeExpressApp('App', 3000);
+    const app = new ExpressApp('App', 3000);
 
     app.addObservers(makeLightObserver(events));
     await app.start();
