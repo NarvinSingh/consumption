@@ -28,12 +28,13 @@ const model = (Superclass = Object) => class Model extends Superclass {
       dbNotify('connecting');
       const connectResult = connect(host, dbName, username, password).then((client) => {
         if (!client.isConnected()) throw error('failed to connect');
-        dbNotify('connected');
         const dbProp = {};
         this.dbs[dbName] = dbProp;
         colNames.forEach((colName) => {
-          dbProp[colName] = makeModelCollection(client.db(dbName).collection(colName));
+          const ModelCollection = makeModelCollection(client.db(dbName).collection(colName));
+          dbProp[colName] = new ModelCollection();
         });
+        dbNotify('connected');
         return client;
       }).catch((reason) => { throw error(reason.message, reason); });
 

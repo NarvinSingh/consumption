@@ -1,27 +1,26 @@
-import { ObjectID } from 'mongodb';
+import mongodb from 'mongodb';
+import { mix } from '../utils.mjs';
+
+const { ObjectID } = mongodb;
 
 function createIdQuery(id) {
   return { _id: ObjectID(id) };
 }
 
-const methods = [
-  function findById(id) {
+const modelCollection = (Superclass = Object) => class ModelCollection extends Superclass {
+  findById(id) {
     return this.findOne(createIdQuery(id));
-  },
+  }
 
-  function deleteById(id) {
+  deleteById(id) {
     return this.findOneAndDelete(createIdQuery(id));
-  },
+  }
 
-  function findOneIgnoreCase(query, locale = 'en_US', strength = 1) {
+  findOneIgnoreCase(query, locale = 'en_US', strength = 1) {
     return this.find(query).limit(1).collation({ locale, strength }).next();
-  },
-];
+  }
+};
 
-function makeModelCollection(collection) {
-  const modelCollection = Object.create(collection);
-  methods.forEach((method) => { modelCollection[method.name] = method; });
-  return modelCollection;
+export default function makeModelCollection(collection) {
+  return mix(collection, modelCollection);
 }
-
-export default makeModelCollection;
