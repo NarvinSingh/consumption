@@ -9,14 +9,12 @@ const sign = promisify(jwt.sign, jwt);
 
 async function createTokens(req) {
   const { user } = req;
-  // const { tokensCol } = req.app.locals;
   const { authModel } = req.app.locals;
   const accessTokenResult = sign(
     { type: 'access', user },
     process.env.ACCESS_TOKEN_KEY,
     { expiresIn: process.env.ACCESS_TOKEN_TTL },
   );
-  // const result = await tokensCol.insertOne({ timestamp: new Date() });
   const result = await authModel.insertRefreshToken();
   const refreshTokenResult = sign(
     { type: 'refresh', user },
@@ -27,8 +25,6 @@ async function createTokens(req) {
 }
 
 router.post('/', authenticate, async (req, res) => {
-  // const { notifyError } = req.app.locals;
-
   try {
     const { user } = req;
 
@@ -45,7 +41,6 @@ router.post('/', authenticate, async (req, res) => {
       return res.json({ user, accessToken, refreshToken });
     }
   } catch (err) {
-    // notifyError(err);
     const { expressApp } = req.app.locals;
     expressApp.notify('tokenRouter POST', err.message, err);
     return res.status(500).json({ message: err.message });
@@ -55,18 +50,13 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 router.delete('/', authenticate, async (req, res) => {
-  // const { notifyError } = req.app.locals;
   const { authModel, expressApp } = req.app.locals;
 
   try {
     if (req.authType === 'Bearer' && req.token.type === 'refresh') {
-      // const { deleteTokenId } = req.app.locals;
-      // const result = await deleteTokenId(req.token.id);
-      // if (result) return res.sendStatus(204);
       if (await authModel.deleteRefreshToken(req.token)) return res.sendStatus(204);
     }
   } catch (err) {
-    // notifyError(err);
     expressApp.notify('tokenRouter DELETE', err.message, err);
     res.status(500).json({ message: err.message });
   }

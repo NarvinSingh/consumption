@@ -6,7 +6,6 @@ const { JsonWebTokenError } = jwt;
 const verify = promisify(jwt.verify, jwt);
 
 export default async function authenticateBearer(req, res, next) {
-  // const { notifyError } = req.app.locals;
   const { authModel, expressApp } = req.app.locals;
 
   try {
@@ -21,9 +20,6 @@ export default async function authenticateBearer(req, res, next) {
       if (!await verify(authCreds, key)) return res.sendStatus(401);
 
       if (type === 'refresh') {
-        // const { findTokenId } = req.app.locals;
-        // const result = await findTokenId(token.id);
-        // if (!result) return res.sendStatus(401);
         if (!await authModel.authenticateRefreshToken(token)) return res.sendStatus(401);
       }
 
@@ -36,7 +32,6 @@ export default async function authenticateBearer(req, res, next) {
     return res.sendStatus(401);
   } catch (err) {
     if (err instanceof JsonWebTokenError) return res.sendStatus(401);
-    // notifyError(err);
     expressApp.notify('authenticateBearer', err.message, err);
     return res.status(500).json({ errors: [{ name: err.name, message: err.message }] });
   }
