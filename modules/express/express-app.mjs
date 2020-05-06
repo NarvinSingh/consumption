@@ -37,7 +37,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
 
     this.state = 'starting';
     notify('starting');
-    this.cleanup = new Cleanup();
+    this.cleanup = new Cleanup(false, ['SIGINT', 'SIGQUIT', 'SIGTERM'], 0);
     this.cleanup.addObservers(notify);
 
     return Promise.all(models.map((model) => model.connect())).then(() => {
@@ -63,11 +63,11 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
         }
 
         notify('closing');
-        return promisify(this.server.close, this.server)().then(() => {
-          notify('closed');
-        }).catch((reason) => {
-          notify(reason);
-        }).finally(() => Promise.all(models.map((model) => model.disconnect())));
+        return Promise.all(models.map((model) => model.disconnect()))
+          .catch((reason) => { notify(reason); })
+          .then(() => promisify(this.server.close, this.server)())
+          .then(() => { notify('closed'); })
+          .catch((reason) => { notify(reason); });
       });
 
       return Promise.race([listenResult, errorResult]);
@@ -83,7 +83,7 @@ const expressApp = (Superclass = Object) => class ExpressApp extends Superclass 
     const notify = this.makeNotifier('server');
     this.state = 'stopping';
     notify('stopping');
-    return this.cleanup.runOnce('stop').then(() => {
+    return this.cleanup.run('stop').then(() => {
       this.server = null;
       this.cleanup = null;
       this.state = 'stopped';

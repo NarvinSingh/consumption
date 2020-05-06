@@ -115,12 +115,12 @@ describe('API server tests', () => {
       { subjectName: 'App', componentName: 'server', event: 'stopping', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'stop received', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'closing', data: undefined },
-      { subjectName: 'App', componentName: 'server', event: 'closed', data: undefined },
       { subjectName: 'Model', componentName: null, event: 'disconnecting', data: undefined },
       { subjectName: 'Model', componentName: null, event: 'disconnect received', data: undefined },
       { subjectName: 'Model', componentName: 'myDb', event: 'disconnecting', data: undefined },
       { subjectName: 'Model', componentName: 'myDb', event: 'disconnected', data: undefined },
       { subjectName: 'Model', componentName: null, event: 'disconnected', data: undefined },
+      { subjectName: 'App', componentName: 'server', event: 'closed', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'stopped', data: undefined },
     ];
     const startStopEvents = [...startEvents, ...stopEvents];
@@ -180,7 +180,6 @@ describe('API server tests', () => {
       { subjectName: 'App', componentName: 'server', event: 'stopping', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'stop received', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'closing', data: undefined },
-      { subjectName: 'App', componentName: 'server', event: 'closed', data: undefined },
       { subjectName: 'Model A', componentName: null, event: 'disconnecting', data: undefined },
       {
         subjectName: 'Model A',
@@ -201,6 +200,7 @@ describe('API server tests', () => {
       { subjectName: 'Model B', componentName: 'myDb2', event: 'disconnected', data: undefined },
       { subjectName: 'Model A', componentName: null, event: 'disconnected', data: undefined },
       { subjectName: 'Model B', componentName: null, event: 'disconnected', data: undefined },
+      { subjectName: 'App', componentName: 'server', event: 'closed', data: undefined },
       { subjectName: 'App', componentName: 'server', event: 'stopped', data: undefined },
     ];
     const startStopEvents = [...startEvents, ...stopEvents];

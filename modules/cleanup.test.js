@@ -7,67 +7,15 @@ describe('Cleanup class tests', () => {
     process.removeAllListeners('SIGTERM');
   });
 
-  test('Insantiate class and run it to remove process listeners', async () => {
-    expect.assertions(7);
+  test('Insantiate cleanup with default parameters', () => {
+    expect.assertions(5);
     const cleanup = new Cleanup();
 
-    expect(cleanup).toBeInstanceOf(Cleanup);
-    expect(process.listenerCount('SIGINT')).toBe(1);
-    expect(process.listenerCount('SIGQUIT')).toBe(1);
-    expect(process.listenerCount('SIGTERM')).toBe(1);
-    await cleanup.run();
-    expect(process.listenerCount('SIGINT')).toBe(0);
-    expect(process.listenerCount('SIGQUIT')).toBe(0);
-    expect(process.listenerCount('SIGTERM')).toBe(0);
-  });
-
-  test('Insantiate class with an array parameter', () => {
-    expect.assertions(1);
-    const cleanup = new Cleanup(['SIGINT']);
-
-    expect(cleanup.signals).toStrictEqual(['SIGINT']);
-  });
-
-  test('Insantiate class with a string parameter', () => {
-    expect.assertions(1);
-    const cleanup = new Cleanup('SIGINT');
-
-    expect(cleanup.signals).toStrictEqual(['SIGINT']);
-  });
-
-  test('Insantiate class with an array and a string parameter', () => {
-    expect.assertions(1);
-    const cleanup = new Cleanup(['SIGINT'], 'SIGQUIT');
-
-    expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT']);
-  });
-
-  test('Insantiate class with string parameters', () => {
-    expect.assertions(1);
-    const cleanup = new Cleanup('SIGINT', 'SIGQUIT');
-
-    expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT']);
-  });
-
-  test('Add default process listenters', () => {
-    expect.assertions(4);
-    const cleanup = new Cleanup();
-
+    expect(cleanup.isRerunnable).toBe(false);
     expect(cleanup.signals).toStrictEqual(['SIGINT', 'SIGQUIT', 'SIGTERM']);
     expect(process.listenerCount('SIGINT')).toBe(1);
     expect(process.listenerCount('SIGQUIT')).toBe(1);
     expect(process.listenerCount('SIGTERM')).toBe(1);
-  });
-
-  test('Call process listenters', () => {
-    expect.assertions(2);
-    const cleanup = new Cleanup('SIGINT');
-    const mockRunOnce = jest.fn();
-
-    cleanup.runOnce = mockRunOnce;
-    process.listeners('SIGINT')[0]('SIGINT');
-    expect(mockRunOnce).toHaveBeenCalledTimes(1);
-    expect(mockRunOnce).toHaveBeenCalledWith('SIGINT', 0);
   });
 
   test('Add a single callback passed as an individual parameter', () => {
@@ -126,30 +74,35 @@ describe('Cleanup class tests', () => {
   });
 
   test('Run cleanup with a single callback and exit', async () => {
-    expect.assertions(4);
+    expect.assertions(5);
     const cleanup = new Cleanup();
     const callback = jest.fn(() => Promise.resolve());
     const mockExit = jest.fn();
     const realExit = process.exit;
+    const events = [];
 
     process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callback);
     await cleanup.run('Exception', 0);
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception');
     expect(mockExit).toHaveBeenCalledTimes(1);
     expect(mockExit).toHaveBeenCalledWith(0);
+    expect(events).toStrictEqual(['Exception received', 'App will exit with code 0']);
     process.exit = realExit;
   });
 
   test('Run cleanup with multiple callbacks and not exit', async () => {
-    expect.assertions(5);
+    expect.assertions(6);
     const cleanup = new Cleanup();
     const callbacks = [jest.fn(() => Promise.resolve()), jest.fn(() => Promise.resolve())];
     const mockExit = jest.fn();
     const realExit = process.exit;
+    const events = [];
 
     process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callbacks);
     await cleanup.run('Exception');
     expect(callbacks[0]).toHaveBeenCalledTimes(1);
@@ -157,6 +110,7 @@ describe('Cleanup class tests', () => {
     expect(callbacks[1]).toHaveBeenCalledTimes(1);
     expect(callbacks[1]).toHaveBeenCalledWith('Exception');
     expect(mockExit).not.toHaveBeenCalled();
+    expect(events).toStrictEqual(['Exception received']);
     process.exit = realExit;
   });
 
@@ -178,11 +132,53 @@ describe('Cleanup class tests', () => {
     expect(callbacks[1]).toHaveBeenCalledWith('Exception');
     expect(mockExit).toHaveBeenCalledTimes(1);
     expect(mockExit).toHaveBeenCalledWith(0);
-    expect(events).toStrictEqual(['Exception received', 'App will exit now']);
+    expect(events).toStrictEqual(['Exception received', 'App will exit with code 0']);
     process.exit = realExit;
   });
 
-  test('Cleanup only runs once', async () => {
+  test('Run process listenter and not exit', () => {
+    expect.assertions(4);
+    const cleanup = new Cleanup(false, ['SIGINT']);
+    const callback = jest.fn(() => Promise.resolve());
+    const mockExit = jest.fn();
+    const realExit = process.exit;
+    const events = [];
+
+    process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
+    cleanup.addCallbacks(callback);
+    process.listeners('SIGINT')[0]('SIGINT');
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith('SIGINT');
+    expect(mockExit).not.toHaveBeenCalled();
+    expect(events).toStrictEqual(['SIGINT received']);
+    process.exit = realExit;
+  });
+
+  test('Run process listenter and exit', (done) => {
+    expect.assertions(5);
+    const cleanup = new Cleanup(false, ['SIGINT'], 0);
+    const callback = jest.fn(() => Promise.resolve());
+    const mockExit = jest.fn();
+    const realExit = process.exit;
+    const events = [];
+
+    process.exit = mockExit;
+    cleanup.addObservers((msg) => { events.push(msg); });
+    cleanup.addCallbacks(callback);
+    mockExit.mockImplementation(() => {
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith('SIGINT');
+      expect(mockExit).toHaveBeenCalledTimes(1);
+      expect(mockExit).toHaveBeenCalledWith(0);
+      expect(events).toStrictEqual(['SIGINT received', 'App will exit with code 0']);
+      process.exit = realExit;
+      done();
+    });
+    process.listeners('SIGINT')[0]('SIGINT');
+  });
+
+  test('Non-rerunnable cleanup only runs once', async () => {
     expect.assertions(3);
     const cleanup = new Cleanup();
     const callback = jest.fn(() => Promise.resolve());
@@ -190,43 +186,60 @@ describe('Cleanup class tests', () => {
 
     cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callback);
-    await cleanup.runOnce('Exception 1');
-    await cleanup.runOnce('Exception 2');
+    await cleanup.run('Exception 1');
+    await cleanup.run('Exception 2');
     expect(callback).toHaveBeenCalledTimes(1);
     expect(callback).toHaveBeenCalledWith('Exception 1');
     expect(events).toStrictEqual(['Exception 1 received']);
   });
 
-  test('Cleanup running once resolves after run does', async () => {
-    expect.assertions(1);
-    const cleanup = new Cleanup();
+  test('Rerunnable cleanup runs more than once', async () => {
+    expect.assertions(4);
+    const cleanup = new Cleanup(true);
     const callback = jest.fn(() => Promise.resolve());
     const events = [];
 
-    cleanup.mock = { run: cleanup.run, runOnce: cleanup.runOnce };
-    cleanup.run = async function mockRun(...args) {
-      const result = await cleanup.mock.run.call(this, ...args);
-      events.push({ method: 'run', args });
-      return result;
-    };
-    cleanup.runOnce = async function mockRunOnce(...args) {
-      const result = await cleanup.mock.runOnce.call(this, ...args);
-      events.push({ method: 'runOnce', args });
-      return result;
-    };
+    cleanup.addObservers((msg) => { events.push(msg); });
     cleanup.addCallbacks(callback);
-    await cleanup.runOnce('Exception 1');
-    events.push('done');
-    expect(events).toStrictEqual([
-      { method: 'run', args: ['Exception 1', undefined] },
-      { method: 'runOnce', args: ['Exception 1'] },
-      'done',
-    ]);
+    await cleanup.run('Exception 1');
+    await cleanup.run('Exception 2');
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback).toHaveBeenCalledWith('Exception 1');
+    expect(callback).toHaveBeenCalledWith('Exception 2');
+    expect(events).toStrictEqual(['Exception 1 received', 'Exception 2 received']);
   });
 
-  test('Cleanup callback runs before process listeners', (done) => {
-    expect.assertions(5);
-    const cleanup = new Cleanup('SIGINT');
+  test('Rerunnable cleanup does not remove process listeners when run', async () => {
+    expect.assertions(7);
+    const cleanup = new Cleanup(true);
+
+    expect(cleanup).toBeInstanceOf(Cleanup);
+    expect(process.listenerCount('SIGINT')).toBe(1);
+    expect(process.listenerCount('SIGQUIT')).toBe(1);
+    expect(process.listenerCount('SIGTERM')).toBe(1);
+    await cleanup.run();
+    expect(process.listenerCount('SIGINT')).toBe(1);
+    expect(process.listenerCount('SIGQUIT')).toBe(1);
+    expect(process.listenerCount('SIGTERM')).toBe(1);
+  });
+
+  test('Non-rerunnable cleanup removes process listeners when run', async () => {
+    expect.assertions(7);
+    const cleanup = new Cleanup();
+
+    expect(cleanup).toBeInstanceOf(Cleanup);
+    expect(process.listenerCount('SIGINT')).toBe(1);
+    expect(process.listenerCount('SIGQUIT')).toBe(1);
+    expect(process.listenerCount('SIGTERM')).toBe(1);
+    await cleanup.run();
+    expect(process.listenerCount('SIGINT')).toBe(0);
+    expect(process.listenerCount('SIGQUIT')).toBe(0);
+    expect(process.listenerCount('SIGTERM')).toBe(0);
+  });
+
+  test('Callback runs before process exits', (done) => {
+    expect.assertions(6);
+    const cleanup = new Cleanup(false, ['SIGINT'], 0);
     const events = [];
     const callback = jest.fn();
     const mockExit = jest.fn();
@@ -243,6 +256,7 @@ describe('Cleanup class tests', () => {
       events.push('processSigint');
       expect(callback).toHaveBeenCalledTimes(1);
       expect(mockExit).toHaveBeenCalledTimes(1);
+      expect(mockExit).toHaveBeenLastCalledWith(0);
       expect(events).toStrictEqual([
         'callbackResolve',
         'processSigint',
