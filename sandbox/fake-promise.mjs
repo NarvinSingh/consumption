@@ -32,7 +32,7 @@ export default class FakePromise {
             const handle = this._.activeHandlers.shift();
             const thenPromise = this._.thenPromises.shift();
 
-            queueMicrotask(() => {
+            process.nextTick(() => {
               try {
                 const result = handle(this._.value);
 

@@ -25,7 +25,7 @@ describe('Fake promise tests', () => {
 
   test('Resolve promise with executor that runs asynchronous microtask code', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => resolve('done'));
+      process.nextTick(() => resolve('done'));
     });
 
     promise.then((value) => {
@@ -72,7 +72,7 @@ describe('Fake promise tests', () => {
     const events = [];
 
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         events.push('promise executor running');
         resolve('done');
       });
@@ -128,7 +128,7 @@ describe('Fake promise tests', () => {
     const events = [];
 
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         events.push('promise executor running');
         resolve('done 1');
         resolve('done 2');
@@ -170,7 +170,7 @@ describe('Fake promise tests', () => {
 
   test('Reject promise (microtask executor)', (done) => {
     const promise = new FakePromise((resolve, reject) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         reject('error');
       });
     });
@@ -243,7 +243,7 @@ describe('Fake promise tests', () => {
 
   test('Catch rejected promise with error thrown by handler (microtask executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
@@ -282,7 +282,7 @@ describe('Fake promise tests', () => {
 
   test('Returned promise resolves to value from handler (microtask executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
@@ -326,7 +326,7 @@ describe('Fake promise tests', () => {
 
   test('Chained promise resolves to prev handler value (microtask executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
@@ -378,17 +378,17 @@ describe('Fake promise tests', () => {
 
   test('Chained promise resolves to prev handler promise value (microtask executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done1');
       });
     });
 
     promise.then((value) => new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve(`${value} done2`);
       });
     })).then((value) => new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve(`${value} done3`);
       });
     })).then((value) => {
@@ -418,14 +418,14 @@ describe('Fake promise tests', () => {
 
   test('Handler returns pending promise that will be resolved (microtask executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
 
     promise
       .then((value) => new FakePromise((resolve) => {
-        queueMicrotask(() => {
+        process.nextTick(() => {
           resolve(`value1 is ${value}`);
         });
       }))
@@ -456,14 +456,14 @@ describe('Fake promise tests', () => {
 
   test('Handler returns pending promise that will be rejected (microtask executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
 
     promise
       .then((value) => new FakePromise((resolve, reject) => {
-        queueMicrotask(() => {
+        process.nextTick(() => {
           reject(`value1 is ${value}`);
         });
       }))
@@ -537,7 +537,7 @@ describe('Fake promise tests', () => {
 
   test('Resolve promise with then called multiple times (async executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
@@ -588,7 +588,7 @@ describe('Fake promise tests', () => {
 
   test('Rejected promise jumps to catch (microtask executor)', (done) => {
     const promise = new FakePromise((resolve, reject) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         reject('error');
       });
     });
@@ -648,7 +648,7 @@ describe('Fake promise tests', () => {
 
   test('Rejected promise in middle of chain jumps to catch (microtask executors)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
@@ -657,7 +657,7 @@ describe('Fake promise tests', () => {
     promise.then((value) => {
       expect(value).toBe('done');
       return new FakePromise((resolve, reject) => {
-        queueMicrotask(() => {
+        process.nextTick(() => {
           reject('error');
         });
       });
@@ -695,7 +695,7 @@ describe('Fake promise tests', () => {
 
   test('Resolved promise propagates value if no handler defined (microtask executor)', (done) => {
     const promise = new FakePromise((resolve) => {
-      queueMicrotask(() => {
+      process.nextTick(() => {
         resolve('done');
       });
     });
