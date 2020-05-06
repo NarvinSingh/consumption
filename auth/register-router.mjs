@@ -11,7 +11,7 @@ router.post('/', validateNewUser, async (req, res) => {
     const result = await authModel.insertUser(name, email, password);
     res.status(201).json({ user: { id: result.insertedId, email } });
   } catch (err) {
-    expressApp.notify('registerRouter', err.message, err);
+    expressApp.notify('registerRouter POST', err.message, err);
     res.status(500).json({ errors: [{ name: err.name, message: err.message }] });
   }
 });
