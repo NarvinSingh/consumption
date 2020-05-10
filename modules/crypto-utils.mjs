@@ -24,9 +24,10 @@ function generateRs256KeyPair() {
 
 function verifyJwt(publicKey, issuer, maxAge, audience, token) {
   return verify(token, publicKey, { algorithms: ['RS256'], issuer, maxAge, audience })
+    .then((payload) => ({ status: 'verified', payload }))
     .catch((reason) => {
       if (reason instanceof JsonWebTokenError) {
-        return { error: { name: reason.name, message: reason.message } };
+        return { status: 'failed', error: { name: reason.name, message: reason.message } };
       }
       throw reason;
     });

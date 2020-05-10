@@ -25,7 +25,7 @@ describe('verifyJwt tests', () => {
   });
 
   test('Verifies a token', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const token = jwt.sign(
       { type: 'access' },
       privateKey,
@@ -40,7 +40,8 @@ describe('verifyJwt tests', () => {
 
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
-    expect(result).toStrictEqual(expect.objectContaining({
+    expect(result.status).toBe('verified');
+    expect(result.payload).toStrictEqual(expect.objectContaining({
       type: 'access',
       iss: 'Test Issuer',
       aud: 'Test API',
@@ -49,7 +50,7 @@ describe('verifyJwt tests', () => {
   });
 
   test('Verifies a token with any claims the if parameters are not specified', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const token = jwt.sign(
       { type: 'access' },
       privateKey,
@@ -64,7 +65,8 @@ describe('verifyJwt tests', () => {
 
     const result = await verifyJwt(publicKey, undefined, undefined, undefined, token);
 
-    expect(result).toStrictEqual(expect.objectContaining({
+    expect(result.status).toBe('verified');
+    expect(result.payload).toStrictEqual(expect.objectContaining({
       type: 'access',
       iss: 'Any Issuer',
       aud: 'Any API',
@@ -73,7 +75,7 @@ describe('verifyJwt tests', () => {
   });
 
   test('Verifies a token without claims if parameters are not specified', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const token = jwt.sign(
       { type: 'access' },
       privateKey,
@@ -86,7 +88,8 @@ describe('verifyJwt tests', () => {
 
     const result = await verifyJwt(publicKey, undefined, undefined, undefined, token);
 
-    expect(result).toStrictEqual(expect.objectContaining({
+    expect(result.status).toBe('verified');
+    expect(result.payload).toStrictEqual(expect.objectContaining({
       type: 'access',
       sub: 'tester',
     }));
@@ -108,6 +111,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt('secret', 'Test Issuer', 'Test API', '1m', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'invalid algorithm',
@@ -133,6 +137,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'invalid signature',
@@ -156,6 +161,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'jwt issuer invalid. expected: Test Issuer',
@@ -180,6 +186,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'jwt issuer invalid. expected: Test Issuer',
@@ -204,6 +211,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '0ms', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'TokenExpiredError',
         message: 'maxAge exceeded',
@@ -227,6 +235,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'jwt audience invalid. expected: Test API',
@@ -251,6 +260,7 @@ describe('verifyJwt tests', () => {
     const result = await verifyJwt(publicKey, 'Test Issuer', '1m', 'Test API', token);
 
     expect(result).toStrictEqual({
+      status: 'failed',
       error: {
         name: 'JsonWebTokenError',
         message: 'jwt audience invalid. expected: Test API',
