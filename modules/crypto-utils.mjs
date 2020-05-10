@@ -1,6 +1,11 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { promisify } from './utils.mjs';
 
-export default function generateRS256KeyPair() {
+const { JsonWebTokenError } = jwt;
+const verify = promisify(jwt.verify, jwt);
+
+function generateRs256KeyPair() {
   return new Promise((resolve, reject) => {
     crypto.generateKeyPair(
       'rsa',
@@ -16,3 +21,15 @@ export default function generateRS256KeyPair() {
     );
   });
 }
+
+function verifyJwt(publicKey, issuer, maxAge, audience, token) {
+  return verify(token, publicKey, { algorithms: ['RS256'], issuer, maxAge, audience })
+    .catch((reason) => {
+      if (reason instanceof JsonWebTokenError) {
+        return { error: { name: reason.name, message: reason.message } };
+      }
+      throw reason;
+    });
+}
+
+export { generateRs256KeyPair, verifyJwt };
