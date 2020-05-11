@@ -1,4 +1,4 @@
-import { coalesce } from './utils.mjs';
+import { coalesce, coalesceLast } from './utils.mjs';
 
 describe('coalesce tests', () => {
   test('First arg is undefined', () => {
@@ -28,5 +28,36 @@ describe('coalesce tests', () => {
     let b;
     let c;
     expect(coalesce(a, b, c)).toBeUndefined();
+  });
+});
+
+describe('coalesceLast tests', () => {
+  test('Last arg is undefined', () => {
+    let a;
+    expect(coalesceLast(1, a)).toBe(1);
+  });
+
+  test('Last arg is defined', () => {
+    const a = 2;
+    expect(coalesceLast(1, a)).toBe(2);
+  });
+
+  test('Middle arg is the first defined arg', () => {
+    let a;
+    const b = 2;
+    expect(coalesceLast(1, b, a)).toBe(2);
+  });
+
+  test('Only the first arg is defined', () => {
+    let a;
+    let b;
+    expect(coalesceLast(1, b, a)).toBe(1);
+  });
+
+  test('No args are defined', () => {
+    let a;
+    let b;
+    let c;
+    expect(coalesceLast(a, b, c)).toBeUndefined();
   });
 });

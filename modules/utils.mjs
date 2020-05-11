@@ -2,6 +2,10 @@ function coalesce(...args) {
   return args.find((arg) => typeof arg !== 'undefined');
 }
 
+function coalesceLast(...args) {
+  return coalesce(...[...args].reverse());
+}
+
 function curry(fn, ...params) {
   return function curriedFn(...rest) {
     return fn.call(this, ...params, ...rest);
@@ -32,4 +36,4 @@ function promisify(fn, context = null) {
   };
 }
 
-export { coalesce, curry, mix, promisify };
+export { coalesce, coalesceLast, curry, mix, promisify };
