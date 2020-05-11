@@ -8,6 +8,10 @@ function createIdQuery(id) {
 }
 
 const modelCollection = (Superclass = Object) => class ModelCollection extends Superclass {
+  static createId() {
+    return ObjectID();
+  }
+
   findById(id) {
     return this.findOne(createIdQuery(id));
   }

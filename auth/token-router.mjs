@@ -1,64 +1,52 @@
 import 'dotenv/config.js';
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import { promisify } from '../modules/utils.mjs';
-import authenticate from './authenticate.mjs';
+import {
+  refresh as authenticateRefresh,
+  basicRefresh as authenticateBasicRefresh,
+  accessRefresh as authenticateAccessRefresh,
+} from './authenticate.mjs';
+import { createPayloadResponse, createTokenResponse } from './create-response.mjs';
 
 const router = express.Router();
-const sign = promisify(jwt.sign, jwt);
 
-async function createTokens(req) {
-  const { user } = req;
-  const { authModel } = req.app.locals;
-  const accessTokenResult = sign(
-    { type: 'access', user },
-    process.env.ACCESS_TOKEN_KEY,
-    { expiresIn: process.env.ACCESS_TOKEN_TTL },
-  );
-  const result = await authModel.insertRefreshToken();
-  const refreshTokenResult = sign(
-    { type: 'refresh', user },
-    process.env.REFRESH_TOKEN_KEY,
-    { jwtid: result.insertedId.toString(), expiresIn: process.env.REFRESH_TOKEN_TTL },
-  );
-  return Promise.all([accessTokenResult, refreshTokenResult]);
-}
+router.get('/verify', authenticateAccessRefresh, (req, res) => {
+  res.json(createPayloadResponse(req.payload));
+});
 
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticateBasicRefresh, async (req, res) => {
   try {
-    const { user } = req;
+    const { authModel } = req.app.locals;
 
     if (req.authType === 'Basic') {
-      const [accessToken, refreshToken] = await createTokens(req);
-      return res.json({ user, accessToken, refreshToken });
+      const { email } = req.user;
+      const [accessToken, refreshToken] = await authModel.createTokens(email);
+      return res.json(createTokenResponse(accessToken, refreshToken));
     }
 
     if (req.authType === 'Bearer') {
-      const { type } = req.token;
-      if (type !== 'refresh') return res.sendStatus(400);
-
-      const [accessToken, refreshToken] = await createTokens(req);
-      return res.json({ user, accessToken, refreshToken });
+      const { payload } = req;
+      const email = payload.sub;
+      await authModel.invalidateRefreshToken(payload);
+      const [accessToken, refreshToken] = await authModel.createTokens(email);
+      return res.json(createTokenResponse(accessToken, refreshToken));
     }
   } catch (err) {
     const { expressApp } = req.app.locals;
     expressApp.notify('tokenRouter POST', err.message, err);
-    return res.status(500).json({ message: err.message });
+    return res.sendStatus(500);
   }
 
   return res.sendStatus(400);
 });
 
-router.delete('/', authenticate, async (req, res) => {
+router.delete('/', authenticateRefresh, async (req, res) => {
   const { authModel, expressApp } = req.app.locals;
 
   try {
-    if (req.authType === 'Bearer' && req.token.type === 'refresh') {
-      if (await authModel.deleteRefreshToken(req.token)) return res.sendStatus(204);
-    }
+    if (await authModel.invalidateRefreshToken(req.token)) return res.sendStatus(204);
   } catch (err) {
     expressApp.notify('tokenRouter DELETE', err.message, err);
-    res.status(500).json({ message: err.message });
+    res.sendStatus(500);
   }
 
   return res.sendStatus(400);

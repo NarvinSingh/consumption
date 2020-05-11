@@ -1,3 +1,5 @@
+import { createFailureResponse } from './create-response.mjs';
+
 const namePattern = new RegExp(/^[a-z]/i);
 const maxNameLen = 64;
 const emailPattern = new RegExp(/^\w+(\.?\w)+@([a-z][-\w]*\.)*[a-z]{2,}\.[a-z]{2,63}$/i);
@@ -13,8 +15,6 @@ const maxPasswordLen = 20;
 export default async function validateNewUser(req, res, next) {
   const { name, email, password } = req.body;
   const errors = [];
-
-  let errorStatus = 400;
 
   if (name === undefined || !name.length) errors.push({ name: 'name', message: 'missing' });
   else if (name.length > maxNameLen) {
@@ -45,10 +45,9 @@ export default async function validateNewUser(req, res, next) {
     if (doc) errors.push({ name: 'email', message: 'exists' });
   } catch (err) {
     expressApp.notify('validateNewUser', err.message, err);
-    errors.push({ name: err.name, message: err.message });
-    errorStatus = 500;
+    return res.sendStatus(500);
   }
 
-  if (errors.length) res.status(errorStatus).json({ errors });
-  else next();
+  if (errors.length) return res.status(400).json(createFailureResponse(errors));
+  return next();
 }
