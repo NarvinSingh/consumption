@@ -85,12 +85,13 @@ const authModel = (Superclass = Object) => class AuthModel extends Superclass {
     );
     const refreshClaims = { type: 'refresh' };
     const id = this.tokens.constructor.createId();
+    const jti = id.toString();
     const refreshTokenResult = sign(
       refreshClaims,
       this.keySpec.refreshTokenPrivateKey,
       {
         algorithm,
-        jwtid: id.toString(),
+        jwtid: jti,
         issuer,
         subject,
         expiresIn: this.keySpec.refreshTokenTtl,
@@ -102,13 +103,19 @@ const authModel = (Superclass = Object) => class AuthModel extends Superclass {
         { _id: id, issuer, subject, iat: toDate(iat), exp: toDate(exp) },
       );
     });
-    return Promise.all([accessTokenResult, refreshTokenResult, insertRefreshTokenResult]);
+    return Promise.all([accessTokenResult, refreshTokenResult, insertRefreshTokenResult])
+      .then(([accessToken, refreshToken, insertOneResult]) => {
+        const { result, insertedCount } = insertOneResult;
+        if (result.ok !== 1) return { status: 'failed', error: { message: 'insert not ok', jti } };
+        if (insertedCount < 1) return { status: 'failed', error: { message: 'not inserted', jti } };
+        return { status: 'created', accessToken, refreshToken };
+      });
   }
 
   verifyAccessToken(token, audience) {
     const unverifiedPayload = jwt.decode(token);
     if (unverifiedPayload.type !== 'access') {
-      return { status: 'not an access token', payload: unverifiedPayload };
+      return { status: 'failed', error: { message: 'not an access token' } };
     }
     return this.verifyAccessJwt(audience, token);
   }
@@ -116,7 +123,7 @@ const authModel = (Superclass = Object) => class AuthModel extends Superclass {
   verifyRefreshToken(token, audience) {
     const unverifiedPayload = jwt.decode(token);
     if (unverifiedPayload.type !== 'refresh') {
-      return { status: 'not an refresh token', payload: unverifiedPayload };
+      return { status: 'failed', error: { message: 'not a refresh token' } };
     }
     const verifyResult = this.verifyRefreshJwt(audience, token);
     const findTokenResult = verifyResult.then(() => this.findRefreshToken(token));
@@ -125,7 +132,16 @@ const authModel = (Superclass = Object) => class AuthModel extends Superclass {
   }
 
   invalidateRefreshToken(token) {
-    return this.tokens.deleteById(token.jti);
+    const { jti } = token;
+    return this.tokens.deleteById(jti).then((result) => {
+      const { ok, value } = result;
+      if (ok !== 1) return { status: 'failed', error: { message: 'find and delete not ok', jti } };
+      if (value === null) return { status: 'failed', error: { message: 'not found', jti } };
+      const { _id } = value;
+      const deletedJti = _id.toString();
+      if (deletedJti !== jti) return { status: 'failed', error: { message: 'not deleted', jti } };
+      return { status: 'invalidated', jti };
+    });
   }
 };
 

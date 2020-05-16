@@ -19,15 +19,18 @@ router.post('/', authenticateBasicRefresh, async (req, res) => {
 
     if (req.authType === 'Basic') {
       const { email } = req.user;
-      const [accessToken, refreshToken] = await authModel.createTokens(email);
+      const { error, accessToken, refreshToken } = await authModel.createTokens(email);
+      if (error) throw new Error(error.message);
       return res.json(createTokenResponse(accessToken, refreshToken));
     }
 
     if (req.authType === 'Bearer') {
       const { payload } = req;
       const email = payload.sub;
-      await authModel.invalidateRefreshToken(payload);
-      const [accessToken, refreshToken] = await authModel.createTokens(email);
+      const { error: invError } = await authModel.invalidateRefreshToken(payload);
+      if (invError) throw new Error(invError.message);
+      const { error, accessToken, refreshToken } = await authModel.createTokens(email);
+      if (error) throw new Error(error.message);
       return res.json(createTokenResponse(accessToken, refreshToken));
     }
   } catch (err) {
@@ -41,15 +44,16 @@ router.post('/', authenticateBasicRefresh, async (req, res) => {
 
 router.delete('/', authenticateRefresh, async (req, res) => {
   const { authModel, expressApp } = req.app.locals;
+  const { payload } = req;
 
   try {
-    if (await authModel.invalidateRefreshToken(req.token)) return res.sendStatus(204);
+    const invResult = await authModel.invalidateRefreshToken(payload);
+    if (invResult.status !== 'invalidated') throw new Error(invResult.error.message);
+    return res.sendStatus(204);
   } catch (err) {
     expressApp.notify('tokenRouter DELETE', err.message, err);
-    res.sendStatus(500);
+    return res.sendStatus(500);
   }
-
-  return res.sendStatus(400);
 });
 
 export default router;

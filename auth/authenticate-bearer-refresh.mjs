@@ -5,13 +5,17 @@ export default async function authenticateBearer(req, res, next) {
     if (req.isAuthenticated || req.authType !== 'Bearer') return next();
 
     const token = req.authCreds;
-    const result = await authModel.verifyRefreshToken(token, req.params.audience);
-    if (result.status === 'not an refresh token') return next();
-    if (result.status !== 'verified') return res.sendStatus(401);
+    const {
+      status,
+      error,
+      payload,
+    } = await authModel.verifyRefreshToken(token, req.params.audience);
+    if (error && error.message === 'not a refresh token') return next();
+    if (status !== 'verified') return res.sendStatus(401);
 
     req.isAuthenticated = true;
     req.token = token;
-    req.payload = result.payload;
+    req.payload = payload;
     return next();
   } catch (err) {
     expressApp.notify('authenticateBearerRefresh', err.message, err);
